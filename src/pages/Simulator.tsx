@@ -23,6 +23,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Zap,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { LearningPopup, PopupType } from "@/components/LearningPopup";
@@ -32,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PortfolioChart } from "@/components/PortfolioChart";
+import { StockRow } from "@/components/StockRow";
 
 // Learning messages for smart feedback
 const learningMessages = [
@@ -188,15 +190,20 @@ export default function Simulator() {
                   Educational simulation using delayed market data
                 </p>
               </div>
-              <div className="flex items-center gap-3 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl px-4 py-2">
+              <div className="flex items-center gap-3 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border border-primary/20 rounded-xl px-4 py-3 shadow-soft animate-pulse-soft">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <span className="font-bold text-lg">Year {simulatedYear}</span>
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <Calendar className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-xl text-foreground">Year {simulatedYear}</span>
+                    <p className="text-[10px] text-muted-foreground">Simulation Time</p>
+                  </div>
                 </div>
-                <div className="h-6 w-px bg-border" />
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  <span>1 day = 1 year</span>
+                <div className="h-8 w-px bg-border/50" />
+                <div className="flex items-center gap-2 bg-warning/10 px-3 py-1.5 rounded-lg">
+                  <Zap className="w-3.5 h-3.5 text-warning" />
+                  <span className="text-xs font-medium text-warning-foreground">1 day = 1 year</span>
                 </div>
               </div>
             </div>
@@ -218,52 +225,63 @@ export default function Simulator() {
             {/* Left Column - Portfolio */}
             <div className="xl:col-span-1 space-y-4">
               {/* Portfolio Summary Card */}
-              <div className="bg-card rounded-2xl border border-border p-5 shadow-soft">
-                <h2 className="font-display font-bold text-lg mb-4 flex items-center gap-2">
-                  <PieChart className="w-5 h-5 text-primary" />
+              <div className="bg-gradient-to-br from-card via-card to-primary/5 rounded-2xl border border-border p-5 shadow-soft relative overflow-hidden">
+                {/* Background decoration */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+                
+                <h2 className="font-display font-bold text-lg mb-4 flex items-center gap-2 relative z-10">
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <PieChart className="w-4 h-4 text-primary" />
+                  </div>
                   Portfolio
                 </h2>
 
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Value</p>
-                    <p className="text-2xl font-bold text-foreground">
+                <div className="space-y-4 relative z-10">
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 border border-primary/10">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Value</p>
+                    <p className="text-3xl font-bold text-foreground animate-fade-in">
                       ₹{metrics.totalValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 rounded-xl p-3 border border-border/50 hover:border-primary/30 transition-colors">
                       <p className="text-xs text-muted-foreground">Invested</p>
-                      <p className="font-semibold">
+                      <p className="font-bold text-lg">
                         ₹{metrics.investedValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                       </p>
                     </div>
-                    <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 rounded-xl p-3 border border-border/50 hover:border-primary/30 transition-colors">
                       <p className="text-xs text-muted-foreground">Cash</p>
-                      <p className="font-semibold">
+                      <p className="font-bold text-lg text-primary">
                         ₹{metrics.cashBalance.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                       </p>
                     </div>
                   </div>
 
-                  <div className={`rounded-lg p-3 ${metrics.unrealizedPL >= 0 ? 'bg-success/10' : 'bg-destructive/10'}`}>
-                    <p className="text-xs text-muted-foreground">Unrealized P&L</p>
-                    <p className={`font-semibold flex items-center gap-1 ${
+                  <div className={`rounded-xl p-4 border transition-all duration-500 ${
+                    metrics.unrealizedPL >= 0 
+                      ? 'bg-success/10 border-success/20' 
+                      : 'bg-destructive/10 border-destructive/20'
+                  }`}>
+                    <p className="text-xs text-muted-foreground mb-1">Unrealized P&L</p>
+                    <p className={`font-bold text-xl flex items-center gap-2 ${
                       metrics.unrealizedPL >= 0 ? 'text-success' : 'text-destructive'
                     }`}>
-                      {metrics.unrealizedPL >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                      {metrics.unrealizedPL >= 0 ? '+' : ''}₹{metrics.unrealizedPL.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                      <span className="text-sm">
+                      <span className={`p-1 rounded-lg ${metrics.unrealizedPL >= 0 ? 'bg-success/20' : 'bg-destructive/20'}`}>
+                        {metrics.unrealizedPL >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                      </span>
+                      {metrics.unrealizedPL >= 0 ? '+' : ''}₹{Math.abs(metrics.unrealizedPL).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      <span className="text-sm font-medium opacity-80">
                         ({metrics.unrealizedPLPercent >= 0 ? '+' : ''}{metrics.unrealizedPLPercent.toFixed(2)}%)
                       </span>
                     </p>
                   </div>
 
                   {/* Risk Meter */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <div className="bg-muted/30 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
                         Risk Score
                         <Tooltip>
                           <TooltipTrigger>
@@ -274,60 +292,94 @@ export default function Simulator() {
                           </TooltipContent>
                         </Tooltip>
                       </p>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                        metrics.riskScore < 40 ? 'bg-success/10 text-success' :
-                        metrics.riskScore < 60 ? 'bg-warning/10 text-warning-foreground' :
-                        'bg-destructive/10 text-destructive'
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                        metrics.riskScore < 40 ? 'bg-success/20 text-success' :
+                        metrics.riskScore < 60 ? 'bg-warning/20 text-warning-foreground' :
+                        'bg-destructive/20 text-destructive'
                       }`}>
                         {metrics.riskScore < 40 ? 'Low' : metrics.riskScore < 60 ? 'Medium' : 'High'}
                       </span>
                     </div>
-                    <Progress value={metrics.riskScore} className="h-2" />
+                    <div className="relative">
+                      <Progress value={metrics.riskScore} className="h-2.5 bg-muted" />
+                      <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground">
+                        <span>Safe</span>
+                        <span>Risky</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Holdings */}
-              <div className="bg-card rounded-2xl border border-border shadow-soft">
+              <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
                 <button 
-                  className="w-full p-4 flex items-center justify-between"
+                  className="w-full p-4 flex items-center justify-between bg-gradient-to-r from-transparent via-muted/30 to-transparent hover:bg-muted/50 transition-colors"
                   onClick={() => setShowHoldings(!showHoldings)}
                 >
                   <h3 className="font-semibold flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-primary" />
-                    Your Holdings ({holdings.length})
+                    <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center">
+                      <BarChart3 className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    Your Holdings 
+                    <span className="text-xs text-muted-foreground font-normal">({holdings.length})</span>
                   </h3>
-                  {showHoldings ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  <div className={`transition-transform duration-200 ${showHoldings ? 'rotate-180' : ''}`}>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
                 </button>
 
-                {showHoldings && (
+                <div className={`overflow-hidden transition-all duration-300 ${showHoldings ? 'max-h-[500px]' : 'max-h-0'}`}>
                   <div className="px-4 pb-4 space-y-2">
                     {holdings.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No holdings yet. Start investing!
-                      </p>
+                      <div className="text-center py-6">
+                        <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                          <Wallet className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">No holdings yet</p>
+                        <p className="text-xs text-muted-foreground mt-1">Start investing to build your portfolio!</p>
+                      </div>
                     ) : (
-                      holdings.map(holding => (
-                        <div key={holding.id} className="bg-muted/50 rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-sm">{holding.stock.symbol}</span>
-                            <span className="text-xs text-muted-foreground">{holding.quantity} shares</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">
-                              ₹{holding.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                            </span>
-                            <span className={`text-xs font-medium ${
-                              holding.profitLoss >= 0 ? 'text-success' : 'text-destructive'
+                      holdings.map((holding, index) => (
+                        <div 
+                          key={holding.id} 
+                          className="bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl p-3.5 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-sm animate-fade-in"
+                          style={{ animationDelay: `${index * 50}ms` }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                                holding.profitLoss >= 0 
+                                  ? 'bg-success/20 text-success' 
+                                  : 'bg-destructive/20 text-destructive'
+                              }`}>
+                                {holding.stock.symbol.slice(0, 2)}
+                              </div>
+                              <div>
+                                <span className="font-semibold text-sm">{holding.stock.symbol}</span>
+                                <p className="text-[10px] text-muted-foreground">{holding.quantity} shares</p>
+                              </div>
+                            </div>
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${
+                              holding.profitLoss >= 0 
+                                ? 'bg-success/10 text-success' 
+                                : 'bg-destructive/10 text-destructive'
                             }`}>
+                              {holding.profitLoss >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                               {holding.profitLoss >= 0 ? '+' : ''}{holding.profitLossPercent.toFixed(1)}%
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Current Value</span>
+                            <span className="font-semibold">
+                              ₹{holding.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                             </span>
                           </div>
                         </div>
                       ))
                     )}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Portfolio Chart */}
@@ -362,7 +414,25 @@ export default function Simulator() {
 
             {/* Right Column - Stock List */}
             <div className="xl:col-span-3">
-              <div className="bg-card rounded-2xl border border-border shadow-soft">
+              <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
+                {/* Header with live indicator */}
+                <div className="bg-gradient-to-r from-primary/5 via-transparent to-success/5 px-4 py-3 border-b border-border flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <div className="w-2.5 h-2.5 bg-success rounded-full animate-pulse" />
+                      <div className="absolute inset-0 w-2.5 h-2.5 bg-success rounded-full animate-ping opacity-75" />
+                    </div>
+                    <span className="text-sm font-medium text-foreground">Live Market Data</span>
+                    <span className="text-xs text-muted-foreground">• {stocks.length} stocks</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <TrendingUp className="w-3 h-3 text-success" />
+                    <span>{stocks.filter(s => s.changePercent >= 0).length} up</span>
+                    <TrendingDown className="w-3 h-3 text-destructive" />
+                    <span>{stocks.filter(s => s.changePercent < 0).length} down</span>
+                  </div>
+                </div>
+                
                 {/* Search and Filter */}
                 <div className="p-4 border-b border-border">
                   <div className="flex flex-col sm:flex-row gap-3">
@@ -405,79 +475,26 @@ export default function Simulator() {
                         <th className="p-3 font-medium text-center">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-border/50">
                       {filteredStocks.map(stock => {
                         const holding = getHolding(stock.id);
                         
                         return (
-                          <tr key={stock.id} className="hover:bg-muted/30 transition-colors">
-                            <td className="p-3">
-                              <div>
-                                <p className="font-semibold text-foreground">{stock.symbol}</p>
-                                <p className="text-xs text-muted-foreground truncate max-w-[150px]">{stock.name}</p>
-                              </div>
-                            </td>
-                            <td className="p-3">
-                              <span className="text-xs bg-muted px-2 py-1 rounded">{stock.sector}</span>
-                            </td>
-                            <td className="p-3 text-right font-medium">
-                              ₹{stock.current_price.toLocaleString('en-IN')}
-                            </td>
-                            <td className="p-3 text-right">
-                              <span className={`flex items-center justify-end gap-1 text-sm ${
-                                stock.changePercent >= 0 ? 'text-success' : 'text-destructive'
-                              }`}>
-                                {stock.changePercent >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                                {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
-                              </span>
-                            </td>
-                            <td className="p-3 text-center">
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                stock.risk_level === 'Low' ? 'bg-success/10 text-success' :
-                                stock.risk_level === 'Medium' ? 'bg-warning/10 text-warning-foreground' :
-                                'bg-destructive/10 text-destructive'
-                              }`}>
-                                {stock.risk_level}
-                              </span>
-                            </td>
-                            <td className="p-3 text-center">
-                              {holding ? (
-                                <span className="text-sm font-medium">{holding.quantity}</span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">-</span>
-                              )}
-                            </td>
-                            <td className="p-3">
-                              <div className="flex items-center justify-center gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  className="h-7 text-xs"
-                                  onClick={() => {
-                                    setSelectedStock(stock);
-                                    setTradeType('buy');
-                                    setQuantity(1);
-                                  }}
-                                >
-                                  Buy
-                                </Button>
-                                {holding && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-7 text-xs"
-                                    onClick={() => {
-                                      setSelectedStock(stock);
-                                      setTradeType('sell');
-                                      setQuantity(1);
-                                    }}
-                                  >
-                                    Sell
-                                  </Button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
+                          <StockRow
+                            key={stock.id}
+                            stock={stock}
+                            holding={holding}
+                            onBuy={(s) => {
+                              setSelectedStock(s);
+                              setTradeType('buy');
+                              setQuantity(1);
+                            }}
+                            onSell={(s) => {
+                              setSelectedStock(s);
+                              setTradeType('sell');
+                              setQuantity(1);
+                            }}
+                          />
                         );
                       })}
                     </tbody>
