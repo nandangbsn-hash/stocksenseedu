@@ -1,46 +1,30 @@
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Users, Shield, ThumbsUp, BookOpen, Heart } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useCommunity, Post, Comment } from "@/hooks/useCommunity";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
+import { 
+  MessageSquare, 
+  Users, 
+  Shield, 
+  Heart, 
+  BookOpen, 
+  Send,
+  Reply,
+  MoreHorizontal,
+  Clock,
+  User,
+  PlusCircle,
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 
-const discussions = [
-  {
-    id: 1,
-    title: "How I understood diversification through the simulator",
-    author: "Priya S.",
-    replies: 24,
-    likes: 56,
-    time: "2 hours ago",
-    tag: "Learning Journey",
-  },
-  {
-    id: 2,
-    title: "Can someone explain SIP in simple words?",
-    author: "Rahul M.",
-    replies: 18,
-    likes: 32,
-    time: "4 hours ago",
-    tag: "Question",
-  },
-  {
-    id: 3,
-    title: "Why do stock prices fall when interest rates rise?",
-    author: "Ananya K.",
-    replies: 31,
-    likes: 89,
-    time: "1 day ago",
-    tag: "Economics",
-  },
-  {
-    id: 4,
-    title: "My experience completing the 'Survive a Crash' challenge",
-    author: "Vikram T.",
-    replies: 45,
-    likes: 112,
-    time: "2 days ago",
-    tag: "Challenge",
-  },
-];
+const tags = ['General', 'Question', 'Learning Journey', 'Economics', 'Challenge', 'Tip'];
 
 const guidelines = [
   {
@@ -60,14 +44,331 @@ const guidelines = [
   },
 ];
 
+function PostCard({ 
+  post, 
+  onLike, 
+  onComment,
+  isExpanded,
+  onToggleExpand,
+}: { 
+  post: Post;
+  onLike: () => void;
+  onComment: () => void;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+}) {
+  const displayName = post.profile?.full_name || post.profile?.username || 'Anonymous';
+  const level = post.profile?.level || 'Beginner';
+  const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
+
+  return (
+    <div className="bg-card rounded-xl border border-border p-5 hover:border-primary/30 transition-all">
+      {/* Post Header */}
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <User className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-foreground">{displayName}</span>
+              <span className="text-xs bg-muted px-2 py-0.5 rounded">{level}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="w-3 h-3" />
+              {timeAgo}
+            </div>
+          </div>
+        </div>
+        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+          {post.tag}
+        </span>
+      </div>
+
+      {/* Post Content */}
+      <h3 className="font-semibold text-lg text-foreground mb-2">{post.title}</h3>
+      <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{post.content}</p>
+
+      {/* Post Actions */}
+      <div className="flex items-center gap-4 pt-3 border-t border-border">
+        <button
+          onClick={onLike}
+          className={`flex items-center gap-1.5 text-sm transition-colors ${
+            post.isLiked ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${post.isLiked ? 'fill-current' : ''}`} />
+          {post.likes_count}
+        </button>
+        <button
+          onClick={onToggleExpand}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+        >
+          <MessageSquare className="w-4 h-4" />
+          {post.comments_count} comments
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CommentSection({ 
+  postId, 
+  fetchComments, 
+  addComment,
+  toggleLikeComment,
+}: { 
+  postId: string;
+  fetchComments: (postId: string) => Promise<Comment[]>;
+  addComment: (postId: string, content: string, parentId?: string) => Promise<void>;
+  toggleLikeComment: (commentId: string, isLiked: boolean) => Promise<void>;
+}) {
+  const { user } = useAuth();
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+
+  useEffect(() => {
+    loadComments();
+  }, [postId]);
+
+  const loadComments = async () => {
+    setLoading(true);
+    const data = await fetchComments(postId);
+    setComments(data);
+    setLoading(false);
+  };
+
+  const handleAddComment = async () => {
+    if (!user) {
+      toast({ title: "Please sign in to comment", variant: "destructive" });
+      return;
+    }
+    if (!newComment.trim()) return;
+
+    try {
+      await addComment(postId, newComment.trim());
+      setNewComment('');
+      await loadComments();
+      toast({ title: "Comment added!" });
+    } catch (error) {
+      toast({ title: "Failed to add comment", variant: "destructive" });
+    }
+  };
+
+  const handleAddReply = async (parentId: string) => {
+    if (!user) {
+      toast({ title: "Please sign in to reply", variant: "destructive" });
+      return;
+    }
+    if (!replyContent.trim()) return;
+
+    try {
+      await addComment(postId, replyContent.trim(), parentId);
+      setReplyingTo(null);
+      setReplyContent('');
+      await loadComments();
+      toast({ title: "Reply added!" });
+    } catch (error) {
+      toast({ title: "Failed to add reply", variant: "destructive" });
+    }
+  };
+
+  const handleLikeComment = async (comment: Comment) => {
+    if (!user) {
+      toast({ title: "Please sign in to like", variant: "destructive" });
+      return;
+    }
+    
+    await toggleLikeComment(comment.id, !!comment.isLiked);
+    // Optimistic update
+    setComments(prev => prev.map(c => {
+      if (c.id === comment.id) {
+        return { ...c, isLiked: !c.isLiked, likes_count: c.isLiked ? c.likes_count - 1 : c.likes_count + 1 };
+      }
+      if (c.replies) {
+        return {
+          ...c,
+          replies: c.replies.map(r => 
+            r.id === comment.id 
+              ? { ...r, isLiked: !r.isLiked, likes_count: r.isLiked ? r.likes_count - 1 : r.likes_count + 1 }
+              : r
+          )
+        };
+      }
+      return c;
+    }));
+  };
+
+  if (loading) {
+    return <div className="p-4 text-center text-muted-foreground">Loading comments...</div>;
+  }
+
+  return (
+    <div className="bg-muted/30 rounded-xl p-4 mt-4 space-y-4">
+      {/* Add Comment */}
+      <div className="flex gap-2">
+        <Input
+          placeholder="Write a comment..."
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+        />
+        <Button size="icon" onClick={handleAddComment}>
+          <Send className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Comments List */}
+      {comments.length === 0 ? (
+        <p className="text-center text-muted-foreground text-sm py-4">
+          Be the first to comment!
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {comments.map(comment => (
+            <div key={comment.id} className="space-y-2">
+              {/* Parent Comment */}
+              <div className="bg-card rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <span className="font-medium text-sm">
+                    {comment.profile?.full_name || comment.profile?.username || 'Anonymous'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                  </span>
+                </div>
+                <p className="text-sm text-foreground mb-2">{comment.content}</p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleLikeComment(comment)}
+                    className={`flex items-center gap-1 text-xs transition-colors ${
+                      comment.isLiked ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'
+                    }`}
+                  >
+                    <Heart className={`w-3.5 h-3.5 ${comment.isLiked ? 'fill-current' : ''}`} />
+                    {comment.likes_count}
+                  </button>
+                  <button
+                    onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Reply className="w-3.5 h-3.5" />
+                    Reply
+                  </button>
+                </div>
+
+                {/* Reply Input */}
+                {replyingTo === comment.id && (
+                  <div className="flex gap-2 mt-3 pl-4">
+                    <Input
+                      placeholder="Write a reply..."
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddReply(comment.id)}
+                      className="text-sm"
+                    />
+                    <Button size="sm" onClick={() => handleAddReply(comment.id)}>
+                      Reply
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Replies */}
+              {comment.replies && comment.replies.length > 0 && (
+                <div className="pl-6 space-y-2">
+                  {comment.replies.map(reply => (
+                    <div key={reply.id} className="bg-muted/50 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-full bg-secondary/10 flex items-center justify-center">
+                          <User className="w-3 h-3 text-secondary" />
+                        </div>
+                        <span className="font-medium text-xs">
+                          {reply.profile?.full_name || reply.profile?.username || 'Anonymous'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-foreground mb-2">{reply.content}</p>
+                      <button
+                        onClick={() => handleLikeComment(reply)}
+                        className={`flex items-center gap-1 text-xs transition-colors ${
+                          reply.isLiked ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'
+                        }`}
+                      >
+                        <Heart className={`w-3 h-3 ${reply.isLiked ? 'fill-current' : ''}`} />
+                        {reply.likes_count}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Community() {
+  const { user } = useAuth();
+  const { posts, loading, createPost, toggleLikePost, fetchComments, addComment, toggleLikeComment } = useCommunity();
+  
+  const [showNewPost, setShowNewPost] = useState(false);
+  const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostContent, setNewPostContent] = useState('');
+  const [newPostTag, setNewPostTag] = useState('General');
+  const [expandedPost, setExpandedPost] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleCreatePost = async () => {
+    if (!user) {
+      toast({ title: "Please sign in to post", variant: "destructive" });
+      return;
+    }
+    if (!newPostTitle.trim() || !newPostContent.trim()) {
+      toast({ title: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await createPost(newPostTitle.trim(), newPostContent.trim(), newPostTag);
+      setShowNewPost(false);
+      setNewPostTitle('');
+      setNewPostContent('');
+      setNewPostTag('General');
+      toast({ title: "Post created! 🎉" });
+    } catch (error) {
+      toast({ title: "Failed to create post", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLike = async (postId: string) => {
+    if (!user) {
+      toast({ title: "Please sign in to like", variant: "destructive" });
+      return;
+    }
+    await toggleLikePost(postId);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-4">
           {/* Header */}
-          <div className="max-w-3xl mx-auto text-center mb-12">
+          <div className="max-w-3xl mx-auto text-center mb-10">
             <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
               Safe Learning Space
             </span>
@@ -81,55 +382,61 @@ export default function Community() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="bg-card rounded-2xl border border-border p-6 shadow-soft">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-display text-xl font-bold text-foreground">Recent Discussions</h2>
-                  <Button size="sm">
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Start Discussion
+            <div className="lg:col-span-2 space-y-4">
+              {/* New Post Button */}
+              {user ? (
+                <Button onClick={() => setShowNewPost(true)} className="w-full mb-4">
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Start a Discussion
+                </Button>
+              ) : (
+                <Link to="/auth" className="block mb-4">
+                  <Button variant="outline" className="w-full">
+                    Sign in to join the discussion
                   </Button>
-                </div>
+                </Link>
+              )}
 
+              {/* Posts List */}
+              {loading ? (
                 <div className="space-y-4">
-                  {discussions.map((discussion) => (
-                    <div
-                      key={discussion.id}
-                      className="p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-muted/30 transition-all cursor-pointer"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <span className="inline-block px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-2">
-                            {discussion.tag}
-                          </span>
-                          <h3 className="font-semibold text-foreground hover:text-primary transition-colors">
-                            {discussion.title}
-                          </h3>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                            <span>{discussion.author}</span>
-                            <span>•</span>
-                            <span>{discussion.time}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <MessageSquare className="w-4 h-4" />
-                            {discussion.replies}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <ThumbsUp className="w-4 h-4" />
-                            {discussion.likes}
-                          </div>
-                        </div>
-                      </div>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-40 bg-muted rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="text-center py-12 bg-card rounded-xl border border-border">
+                  <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2">No discussions yet</h3>
+                  <p className="text-muted-foreground text-sm mb-4">Be the first to start a conversation!</p>
+                  {user && (
+                    <Button onClick={() => setShowNewPost(true)}>Start Discussion</Button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {posts.map(post => (
+                    <div key={post.id}>
+                      <PostCard
+                        post={post}
+                        onLike={() => handleLike(post.id)}
+                        onComment={() => {}}
+                        isExpanded={expandedPost === post.id}
+                        onToggleExpand={() => setExpandedPost(expandedPost === post.id ? null : post.id)}
+                      />
+                      
+                      {expandedPost === post.id && (
+                        <CommentSection
+                          postId={post.id}
+                          fetchComments={fetchComments}
+                          addComment={addComment}
+                          toggleLikeComment={toggleLikeComment}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
-
-                <Button variant="ghost" className="w-full mt-4">
-                  View All Discussions
-                </Button>
-              </div>
+              )}
             </div>
 
             {/* Sidebar */}
@@ -141,23 +448,16 @@ export default function Community() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="w-5 h-5 text-primary" />
-                      <span className="text-sm text-muted-foreground">Members</span>
+                      <span className="text-sm text-muted-foreground">Active Learners</span>
                     </div>
-                    <span className="font-bold text-foreground">12,450+</span>
+                    <span className="font-bold text-foreground">{posts.length > 0 ? '1,000+' : 'Join now!'}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <MessageSquare className="w-5 h-5 text-secondary" />
                       <span className="text-sm text-muted-foreground">Discussions</span>
                     </div>
-                    <span className="font-bold text-foreground">3,200+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ThumbsUp className="w-5 h-5 text-success" />
-                      <span className="text-sm text-muted-foreground">Helpful Answers</span>
-                    </div>
-                    <span className="font-bold text-foreground">8,900+</span>
+                    <span className="font-bold text-foreground">{posts.length}</span>
                   </div>
                 </div>
               </div>
@@ -184,6 +484,58 @@ export default function Community() {
         </div>
       </main>
       <Footer />
+
+      {/* New Post Dialog */}
+      <Dialog open={showNewPost} onOpenChange={setShowNewPost}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Start a Discussion</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Topic</label>
+              <select
+                value={newPostTag}
+                onChange={(e) => setNewPostTag(e.target.value)}
+                className="w-full bg-background border border-input rounded-lg px-3 py-2 text-sm"
+              >
+                {tags.map(tag => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Title</label>
+              <Input
+                placeholder="What's on your mind?"
+                value={newPostTitle}
+                onChange={(e) => setNewPostTitle(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Content</label>
+              <Textarea
+                placeholder="Share your thoughts, questions, or learnings..."
+                value={newPostContent}
+                onChange={(e) => setNewPostContent(e.target.value)}
+                rows={5}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewPost(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreatePost} disabled={isSubmitting}>
+              {isSubmitting ? 'Posting...' : 'Post'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
