@@ -21,9 +21,9 @@ import {
   Info,
   Calendar,
   ChevronDown,
-  ChevronUp,
-  Clock,
   Zap,
+  Clock,
+  Target,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { LearningPopup, PopupType } from "@/components/LearningPopup";
@@ -34,6 +34,8 @@ import {
 } from "@/components/ui/tooltip";
 import { PortfolioChart } from "@/components/PortfolioChart";
 import { StockRow } from "@/components/StockRow";
+import { LiveStockTicker } from "@/components/LiveStockTicker";
+import { InvestmentReport } from "@/components/InvestmentReport";
 
 // Learning messages for smart feedback
 const learningMessages = [
@@ -65,7 +67,10 @@ const learningMessages = [
 
 export default function Simulator() {
   const { user } = useAuth();
-  const { stocks, portfolio, holdings, metrics, simulatedYear, portfolioHistory, loading, buyStock, sellStock } = useStockSimulation();
+  const { 
+    stocks, portfolio, holdings, metrics, simulatedYear, portfolioHistory, 
+    loading, simulationEnded, endData, maxYears, buyStock, sellStock, resetSimulation 
+  } = useStockSimulation();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sectorFilter, setSectorFilter] = useState<string>("all");
@@ -74,6 +79,7 @@ export default function Simulator() {
   const [quantity, setQuantity] = useState(1);
   const [activePopup, setActivePopup] = useState<typeof learningMessages[0] | null>(null);
   const [showHoldings, setShowHoldings] = useState(true);
+  const [showReport, setShowReport] = useState(false);
 
   const sectors = [...new Set(stocks.map(s => s.sector))];
 
@@ -179,6 +185,9 @@ export default function Simulator() {
       <Navbar />
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-4">
+          {/* Live Stock Ticker */}
+          <LiveStockTicker stocks={stocks} />
+
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -187,23 +196,26 @@ export default function Simulator() {
                   Stock Simulator
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">
-                  Educational simulation using delayed market data
+                  Live prices update every 10 seconds • Educational simulation
                 </p>
               </div>
-              <div className="flex items-center gap-3 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border border-primary/20 rounded-xl px-4 py-3 shadow-soft animate-pulse-soft">
+              <div className="flex items-center gap-3 bg-gradient-to-r from-primary/10 via-accent/10 to-success/10 border border-primary/20 rounded-2xl px-5 py-3 shadow-soft">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <Calendar className="w-4 h-4 text-primary" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+                    <Calendar className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <span className="font-bold text-xl text-foreground">Year {simulatedYear}</span>
-                    <p className="text-[10px] text-muted-foreground">Simulation Time</p>
+                    <span className="font-display font-bold text-2xl text-foreground">Year {simulatedYear}</span>
+                    <p className="text-[10px] text-muted-foreground font-medium">of {maxYears}</p>
                   </div>
                 </div>
-                <div className="h-8 w-px bg-border/50" />
-                <div className="flex items-center gap-2 bg-warning/10 px-3 py-1.5 rounded-lg">
-                  <Zap className="w-3.5 h-3.5 text-warning" />
-                  <span className="text-xs font-medium text-warning-foreground">1 day = 1 year</span>
+                <div className="h-10 w-px bg-border/50" />
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-center gap-1.5 bg-warning/15 px-3 py-1.5 rounded-lg border border-warning/20">
+                    <Zap className="w-3.5 h-3.5 text-warning" />
+                    <span className="text-xs font-bold text-warning-foreground">1 day = 1 year</span>
+                  </div>
+                  <Progress value={(simulatedYear / maxYears) * 100} className="w-24 h-1.5" />
                 </div>
               </div>
             </div>
@@ -237,9 +249,9 @@ export default function Simulator() {
                 </h2>
 
                 <div className="space-y-4 relative z-10">
-                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 border border-primary/10">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Value</p>
-                    <p className="text-3xl font-bold text-foreground animate-fade-in">
+                  <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-4 border border-primary/10">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1 font-medium">Total Value</p>
+                    <p className="text-3xl font-display font-bold text-foreground animate-fade-in number-display">
                       ₹{metrics.totalValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </p>
                   </div>
@@ -521,6 +533,21 @@ export default function Simulator() {
         </div>
       </main>
       <Footer />
+
+      {/* Investment Report Modal */}
+      {endData && (
+        <InvestmentReport
+          open={simulationEnded || showReport}
+          onClose={() => setShowReport(false)}
+          onRestart={resetSimulation}
+          finalYear={endData.finalYear}
+          totalValue={endData.totalValue}
+          startingBalance={100000}
+          holdings={endData.holdings}
+          portfolioHistory={endData.portfolioHistory}
+          cashBalance={endData.cashBalance}
+        />
+      )}
 
       {/* Trade Dialog */}
       <Dialog open={!!selectedStock} onOpenChange={() => setSelectedStock(null)}>

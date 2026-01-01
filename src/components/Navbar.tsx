@@ -14,10 +14,10 @@ import {
 const navLinks = [
   { name: "Home", path: "/", icon: null },
   { name: "Simulator", path: "/simulator", icon: TrendingUp },
+  { name: "AI Coach", path: "/ai-coach", icon: Users },
   { name: "Learn", path: "/learn", icon: BookOpen },
   { name: "Challenges", path: "/challenges", icon: Trophy },
   { name: "Community", path: "/community", icon: Users },
-  { name: "About", path: "/about", icon: Info },
 ];
 
 export function Navbar() {

@@ -12,6 +12,7 @@ import Challenges from "./pages/Challenges";
 import Community from "./pages/Community";
 import About from "./pages/About";
 import Auth from "./pages/Auth";
+import AICoach from "./pages/AICoach";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/community" element={<Community />} />
             <Route path="/about" element={<About />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/ai-coach" element={<AICoach />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
