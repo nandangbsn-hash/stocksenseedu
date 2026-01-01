@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useStockSimulation, Stock, Holding } from "@/hooks/useStockSimulation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
@@ -22,6 +22,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Clock,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { LearningPopup, PopupType } from "@/components/LearningPopup";
@@ -30,6 +31,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PortfolioChart } from "@/components/PortfolioChart";
 
 // Learning messages for smart feedback
 const learningMessages = [
@@ -61,7 +63,7 @@ const learningMessages = [
 
 export default function Simulator() {
   const { user } = useAuth();
-  const { stocks, portfolio, holdings, metrics, simulatedYear, loading, buyStock, sellStock } = useStockSimulation();
+  const { stocks, portfolio, holdings, metrics, simulatedYear, portfolioHistory, loading, buyStock, sellStock } = useStockSimulation();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sectorFilter, setSectorFilter] = useState<string>("all");
@@ -186,10 +188,16 @@ export default function Simulator() {
                   Educational simulation using delayed market data
                 </p>
               </div>
-              <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2">
-                <Calendar className="w-4 h-4 text-primary" />
-                <span className="font-medium">Year {simulatedYear}</span>
-                <span className="text-xs text-muted-foreground">of your journey</span>
+              <div className="flex items-center gap-3 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <span className="font-bold text-lg">Year {simulatedYear}</span>
+                </div>
+                <div className="h-6 w-px bg-border" />
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  <span>1 day = 1 year</span>
+                </div>
               </div>
             </div>
           </div>
@@ -322,6 +330,13 @@ export default function Simulator() {
                 )}
               </div>
 
+              {/* Portfolio Chart */}
+              <PortfolioChart 
+                history={portfolioHistory}
+                currentYear={simulatedYear}
+                startingBalance={100000}
+              />
+
               {/* Tips */}
               <div className="bg-card rounded-2xl border border-border p-4 shadow-soft">
                 <div className="flex items-center gap-2 mb-3">
@@ -331,11 +346,11 @@ export default function Simulator() {
                 <ul className="space-y-2 text-xs text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="w-1 h-1 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                    Diversify across different sectors
+                    Time moves fast! 1 real day = 1 simulated year
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="w-1 h-1 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                    Don't invest all your money at once
+                    Diversify across different sectors
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="w-1 h-1 rounded-full bg-primary mt-1.5 flex-shrink-0" />
@@ -569,7 +584,7 @@ export default function Simulator() {
             </div>
           )}
 
-          <DialogFooter className="gap-2">
+          <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={() => setSelectedStock(null)}>
               Cancel
             </Button>
@@ -584,7 +599,7 @@ export default function Simulator() {
             >
               Confirm {tradeType === 'buy' ? 'Purchase' : 'Sale'}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
