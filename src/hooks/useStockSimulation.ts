@@ -42,6 +42,14 @@ export interface PortfolioHistoryPoint {
   invested: number;
 }
 
+export interface SimulationEndData {
+  finalYear: number;
+  totalValue: number;
+  holdings: Holding[];
+  portfolioHistory: PortfolioHistoryPoint[];
+  cashBalance: number;
+}
+
 const PRICE_UPDATE_INTERVAL = 5 * 60 * 1000; // 5 minutes = prices update
 const YEAR_DURATION = 24 * 60 * 60 * 1000; // 1 real day = 1 simulated year
 
@@ -58,6 +66,9 @@ function getMarketTrend(): number {
   return 0.02 + (Math.random() - 0.4) * 0.1; // -0.02 to +0.08
 }
 
+const MAX_SIMULATION_YEARS = 20;
+const LIVE_UPDATE_INTERVAL = 10 * 1000; // Update prices every 10 seconds for live feel
+
 export function useStockSimulation() {
   const { user } = useAuth();
   const [stocks, setStocks] = useState<Stock[]>([]);
@@ -66,6 +77,8 @@ export function useStockSimulation() {
   const [loading, setLoading] = useState(true);
   const [simulatedYear, setSimulatedYear] = useState(1);
   const [portfolioHistory, setPortfolioHistory] = useState<PortfolioHistoryPoint[]>([]);
+  const [simulationEnded, setSimulationEnded] = useState(false);
+  const [endData, setEndData] = useState<SimulationEndData | null>(null);
   
   const lastYearRef = useRef<number>(1);
   const pricesRef = useRef<Map<string, number>>(new Map());
@@ -76,7 +89,7 @@ export function useStockSimulation() {
     const now = new Date();
     const elapsed = now.getTime() - startDate.getTime();
     const yearsElapsed = Math.floor(elapsed / YEAR_DURATION);
-    return Math.min(baseYear + yearsElapsed, 30); // Cap at 30 years
+    return Math.min(baseYear + yearsElapsed, MAX_SIMULATION_YEARS); // Cap at 20 years
   }, []);
 
   // Apply annual price changes based on volatility and market trend
@@ -446,14 +459,77 @@ export function useStockSimulation() {
     return () => clearInterval(interval);
   }, [portfolio, simulatedYear, calculateSimulatedYear, fetchStocks]);
 
-  // Initialize and update prices every 5 minutes
+  // Check if simulation should end at 20 years
+  useEffect(() => {
+    if (simulatedYear >= MAX_SIMULATION_YEARS && !simulationEnded && portfolio) {
+      const totalValue = (portfolio.cash_balance || 0) + holdings.reduce((sum, h) => sum + h.currentValue, 0);
+      setEndData({
+        finalYear: simulatedYear,
+        totalValue,
+        holdings: [...holdings],
+        portfolioHistory: [...portfolioHistory],
+        cashBalance: portfolio.cash_balance,
+      });
+      setSimulationEnded(true);
+    }
+  }, [simulatedYear, simulationEnded, portfolio, holdings, portfolioHistory]);
+
+  // Reset simulation
+  const resetSimulation = useCallback(async () => {
+    if (!user || !portfolio) return;
+    
+    // Delete all holdings
+    await supabase.from('holdings').delete().eq('portfolio_id', portfolio.id);
+    
+    // Reset portfolio
+    await supabase
+      .from('portfolios')
+      .update({ 
+        cash_balance: 100000, 
+        simulated_year: 1,
+        year_started_at: new Date().toISOString()
+      })
+      .eq('id', portfolio.id);
+    
+    // Clear local state
+    pricesRef.current.clear();
+    setSimulatedYear(1);
+    setPortfolioHistory([]);
+    setSimulationEnded(false);
+    setEndData(null);
+    lastYearRef.current = 1;
+    
+    // Refresh data
+    await fetchPortfolio();
+    await fetchStocks(1);
+    await fetchHoldings();
+  }, [user, portfolio, fetchPortfolio, fetchStocks, fetchHoldings]);
+
+  // Initialize and update prices more frequently for live feel
   useEffect(() => {
     fetchStocks();
     
-    const interval = setInterval(() => {
-      // Small intra-day price fluctuations
+    // Live price updates every 10 seconds
+    const liveInterval = setInterval(() => {
       setStocks(prev => prev.map(stock => {
-        const fluctuation = 1 + (Math.random() - 0.5) * 0.02; // ±1%
+        const fluctuation = 1 + (Math.random() - 0.5) * 0.015; // ±0.75%
+        const newPrice = stock.current_price * fluctuation;
+        const change = newPrice - stock.base_price;
+        const changePercent = (change / stock.base_price) * 100;
+        
+        return {
+          ...stock,
+          current_price: Math.round(newPrice * 100) / 100,
+          change: Math.round(change * 100) / 100,
+          changePercent: Math.round(changePercent * 100) / 100,
+        };
+      }));
+    }, LIVE_UPDATE_INTERVAL);
+    
+    // Bigger price movements every 5 minutes
+    const majorInterval = setInterval(() => {
+      setStocks(prev => prev.map(stock => {
+        const fluctuation = 1 + (Math.random() - 0.5) * 0.04; // ±2%
         const newPrice = stock.current_price * fluctuation;
         const change = newPrice - stock.base_price;
         const changePercent = (change / stock.base_price) * 100;
@@ -467,7 +543,10 @@ export function useStockSimulation() {
       }));
     }, PRICE_UPDATE_INTERVAL);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(liveInterval);
+      clearInterval(majorInterval);
+    };
   }, [fetchStocks]);
 
   useEffect(() => {
@@ -491,8 +570,12 @@ export function useStockSimulation() {
     simulatedYear,
     portfolioHistory,
     loading,
+    simulationEnded,
+    endData,
+    maxYears: MAX_SIMULATION_YEARS,
     buyStock,
     sellStock,
+    resetSimulation,
     refreshData: () => {
       fetchStocks();
       fetchPortfolio();

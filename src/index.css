@@ -2,62 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap');
-
 @layer base {
   :root {
-    /* StockSense - Soft, calming educational palette */
-    --background: 210 40% 98%;
-    --foreground: 215 35% 15%;
+    /* StockSense - Premium Financial App Palette */
+    --background: 220 20% 97%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 35% 15%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 35% 15%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Soft blue - trust & calm */
-    --primary: 210 70% 50%;
+    /* Deep blue - trust & professionalism */
+    --primary: 217 91% 50%;
     --primary-foreground: 0 0% 100%;
 
-    /* Soft green - growth & success */
-    --secondary: 160 60% 45%;
+    /* Emerald green - growth & prosperity */
+    --secondary: 158 64% 42%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 30% 95%;
-    --muted-foreground: 215 20% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 160 55% 50%;
+    --accent: 173 58% 39%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 65% 55%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 30% 90%;
-    --input: 210 30% 90%;
-    --ring: 210 70% 50%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
-    /* Custom tokens for StockSense */
-    --success: 160 60% 45%;
+    /* Custom tokens */
+    --success: 158 64% 42%;
     --success-foreground: 0 0% 100%;
-    --warning: 45 95% 50%;
-    --warning-foreground: 30 80% 20%;
-    --info: 200 80% 55%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 26 83% 14%;
+    --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(210 70% 50%) 0%, hsl(180 60% 45%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(160 60% 45%) 0%, hsl(180 55% 50%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(200 80% 55%) 0%, hsl(210 70% 50%) 100%);
+    /* Premium Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(217 91% 50%) 0%, hsl(199 89% 48%) 50%, hsl(158 64% 42%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 20% 97%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(158 64% 42%) 0%, hsl(173 58% 39%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(199 89% 48%) 0%, hsl(217 91% 50%) 100%);
+    --gradient-premium: linear-gradient(135deg, hsl(217 91% 50%) 0%, hsl(262 83% 58%) 50%, hsl(339 66% 53%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(24 93% 53%) 100%);
 
-    /* Shadows */
-    --shadow-soft: 0 4px 20px -4px hsl(210 50% 50% / 0.15);
-    --shadow-card: 0 2px 12px -2px hsl(210 50% 50% / 0.1);
-    --shadow-button: 0 4px 14px -4px hsl(210 70% 50% / 0.3);
-    --shadow-elevated: 0 8px 30px -8px hsl(210 50% 50% / 0.2);
+    /* Rich Shadows */
+    --shadow-soft: 0 4px 24px -6px hsl(217 91% 50% / 0.12);
+    --shadow-card: 0 2px 16px -4px hsl(220 50% 30% / 0.08);
+    --shadow-button: 0 4px 16px -4px hsl(217 91% 50% / 0.35);
+    --shadow-elevated: 0 12px 40px -12px hsl(220 50% 30% / 0.2);
+    --shadow-glow: 0 0 40px -10px hsl(217 91% 50% / 0.3);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -70,37 +71,37 @@
   }
 
   .dark {
-    --background: 215 35% 10%;
-    --foreground: 210 40% 98%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
 
-    --card: 215 30% 14%;
-    --card-foreground: 210 40% 98%;
+    --card: 224 71% 7%;
+    --card-foreground: 213 31% 91%;
 
-    --popover: 215 30% 14%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 224 71% 7%;
+    --popover-foreground: 213 31% 91%;
 
-    --primary: 200 75% 55%;
-    --primary-foreground: 215 35% 10%;
+    --primary: 210 100% 60%;
+    --primary-foreground: 224 71% 4%;
 
-    --secondary: 160 55% 50%;
-    --secondary-foreground: 215 35% 10%;
+    --secondary: 158 55% 50%;
+    --secondary-foreground: 224 71% 4%;
 
-    --muted: 215 25% 20%;
-    --muted-foreground: 210 20% 65%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 160 55% 50%;
-    --accent-foreground: 215 35% 10%;
+    --accent: 173 55% 45%;
+    --accent-foreground: 224 71% 4%;
 
-    --destructive: 0 62.8% 45%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 213 31% 91%;
 
-    --border: 215 25% 22%;
-    --input: 215 25% 22%;
-    --ring: 200 75% 55%;
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 210 100% 60%;
 
-    --success: 160 55% 50%;
-    --warning: 45 90% 50%;
-    --info: 200 80% 60%;
+    --success: 158 55% 50%;
+    --warning: 38 92% 55%;
+    --info: 199 89% 55%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -119,19 +120,24 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', 'Nunito', system-ui, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-feature-settings: 'ss01' on, 'ss02' on;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Nunito', 'Inter', system-ui, sans-serif;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
     @apply font-bold tracking-tight;
+  }
+  
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl;
+    @apply bg-card/80 backdrop-blur-lg border border-border/50 rounded-2xl;
     box-shadow: var(--shadow-card);
   }
 
@@ -147,6 +153,14 @@
     background: var(--gradient-accent);
   }
 
+  .gradient-premium {
+    background: var(--gradient-premium);
+  }
+
+  .gradient-gold {
+    background: var(--gradient-gold);
+  }
+
   .shadow-soft {
     box-shadow: var(--shadow-soft);
   }
@@ -155,13 +169,58 @@
     box-shadow: var(--shadow-elevated);
   }
 
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background: var(--gradient-hero);
   }
+
+  .text-gradient-premium {
+    @apply bg-clip-text text-transparent;
+    background: var(--gradient-premium);
+  }
+
+  /* Number display for financial data */
+  .number-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-feature-settings: 'tnum' on;
+    letter-spacing: -0.02em;
+  }
+
+  /* Animated border gradient */
+  .border-gradient {
+    position: relative;
+    background: linear-gradient(var(--background), var(--background)) padding-box,
+                var(--gradient-hero) border-box;
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+  }
+
+  /* Premium button hover */
+  .btn-premium {
+    @apply relative overflow-hidden;
+    background: var(--gradient-hero);
+  }
+  
+  .btn-premium::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(255,255,255,0.1) 100%);
+  }
+  
+  .btn-premium:hover::before {
+    @apply opacity-100;
+  }
 }
 
 @layer utilities {
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+  }
+
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
@@ -205,6 +264,15 @@
 
   .animate-glow-danger {
     animation: glow-danger 2s ease-in-out infinite;
+  }
+
+  .animate-number-tick {
+    animation: number-tick 0.3s ease-out;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 
   @keyframes float {
@@ -264,11 +332,17 @@
 
   @keyframes glow-success {
     0%, 100% { box-shadow: 0 0 5px hsl(var(--success) / 0.3); }
-    50% { box-shadow: 0 0 15px hsl(var(--success) / 0.5); }
+    50% { box-shadow: 0 0 20px hsl(var(--success) / 0.5); }
   }
 
   @keyframes glow-danger {
     0%, 100% { box-shadow: 0 0 5px hsl(var(--destructive) / 0.3); }
-    50% { box-shadow: 0 0 15px hsl(var(--destructive) / 0.5); }
+    50% { box-shadow: 0 0 20px hsl(var(--destructive) / 0.5); }
+  }
+
+  @keyframes number-tick {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
   }
 }
