@@ -402,16 +402,18 @@ export function useStockSimulation() {
     return { success: true };
   };
 
-  // Calculate portfolio metrics
+  // Calculate portfolio metrics - use cash balance directly when no holdings
+  const cashBalance = portfolio?.cash_balance || 100000;
+  const holdingsValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
+  const investedValue = holdings.reduce((sum, h) => sum + (h.average_buy_price * h.quantity), 0);
+  const unrealizedPL = holdings.reduce((sum, h) => sum + h.profitLoss, 0);
+  
   const metrics = {
-    totalValue: (portfolio?.cash_balance || 0) + holdings.reduce((sum, h) => sum + h.currentValue, 0),
-    investedValue: holdings.reduce((sum, h) => sum + (h.average_buy_price * h.quantity), 0),
-    cashBalance: portfolio?.cash_balance || 0,
-    unrealizedPL: holdings.reduce((sum, h) => sum + h.profitLoss, 0),
-    unrealizedPLPercent: holdings.length > 0 
-      ? (holdings.reduce((sum, h) => sum + h.profitLoss, 0) / 
-         holdings.reduce((sum, h) => sum + (h.average_buy_price * h.quantity), 0)) * 100
-      : 0,
+    totalValue: cashBalance + holdingsValue,
+    investedValue,
+    cashBalance,
+    unrealizedPL,
+    unrealizedPLPercent: investedValue > 0 ? (unrealizedPL / investedValue) * 100 : 0,
     riskScore: calculateRiskScore(holdings),
   };
 

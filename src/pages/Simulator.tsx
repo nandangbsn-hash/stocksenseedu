@@ -341,7 +341,7 @@ export default function Simulator() {
                   </div>
                 </button>
 
-                <div className={`overflow-hidden transition-all duration-300 ${showHoldings ? 'max-h-[500px]' : 'max-h-0'}`}>
+                <div className={`overflow-hidden transition-all duration-300 ${showHoldings ? 'max-h-[800px] overflow-y-auto' : 'max-h-0'}`}>
                   <div className="px-4 pb-4 space-y-2">
                     {holdings.length === 0 ? (
                       <div className="text-center py-6">
