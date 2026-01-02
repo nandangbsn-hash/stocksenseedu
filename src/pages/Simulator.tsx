@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStockSimulation, Stock, Holding } from "@/hooks/useStockSimulation";
+import { useFundSimulation } from "@/hooks/useFundSimulation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { 
@@ -24,6 +26,8 @@ import {
   Zap,
   Clock,
   Target,
+  Building2,
+  Landmark,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { LearningPopup, PopupType } from "@/components/LearningPopup";
@@ -36,6 +40,8 @@ import { PortfolioChart } from "@/components/PortfolioChart";
 import { StockRow } from "@/components/StockRow";
 import { LiveStockTicker } from "@/components/LiveStockTicker";
 import { InvestmentReport } from "@/components/InvestmentReport";
+import { YearCountdownTimer } from "@/components/YearCountdownTimer";
+import { FundsSection } from "@/components/FundsSection";
 
 // Learning messages for smart feedback
 const learningMessages = [
@@ -69,8 +75,15 @@ export default function Simulator() {
   const { user } = useAuth();
   const { 
     stocks, portfolio, holdings, metrics, simulatedYear, portfolioHistory, 
-    loading, simulationEnded, endData, maxYears, buyStock, sellStock, resetSimulation 
+    loading, simulationEnded, endData, maxYears, buyStock, sellStock, resetSimulation,
+    refreshData: refreshStockData
   } = useStockSimulation();
+  
+  const {
+    mutualFunds, indexFunds, mfHoldings, ifHoldings, mfMetrics, ifMetrics,
+    buyMutualFund, sellMutualFund, buyIndexFund, sellIndexFund,
+    refreshData: refreshFundData
+  } = useFundSimulation(portfolio?.id || null, simulatedYear);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sectorFilter, setSectorFilter] = useState<string>("all");
@@ -80,8 +93,19 @@ export default function Simulator() {
   const [activePopup, setActivePopup] = useState<typeof learningMessages[0] | null>(null);
   const [showHoldings, setShowHoldings] = useState(true);
   const [showReport, setShowReport] = useState(false);
+  const [activeTab, setActiveTab] = useState("stocks");
 
   const sectors = [...new Set(stocks.map(s => s.sector))];
+  
+  // Combined portfolio metrics including funds
+  const totalFundsValue = mfMetrics.totalValue + ifMetrics.totalValue;
+  const totalFundsInvested = mfMetrics.investedValue + ifMetrics.investedValue;
+  const combinedMetrics = {
+    ...metrics,
+    totalValue: metrics.totalValue + totalFundsValue,
+    investedValue: metrics.investedValue + totalFundsInvested,
+    fundsValue: totalFundsValue,
+  };
 
   const filteredStocks = stocks.filter(stock => {
     const matchesSearch = stock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

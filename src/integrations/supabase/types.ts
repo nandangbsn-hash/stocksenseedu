@@ -261,6 +261,108 @@ export type Database = {
           },
         ]
       }
+      index_fund_holdings: {
+        Row: {
+          average_nav: number
+          created_at: string | null
+          id: string
+          index_fund_id: string
+          portfolio_id: string
+          units: number
+          updated_at: string | null
+        }
+        Insert: {
+          average_nav: number
+          created_at?: string | null
+          id?: string
+          index_fund_id: string
+          portfolio_id: string
+          units: number
+          updated_at?: string | null
+        }
+        Update: {
+          average_nav?: number
+          created_at?: string | null
+          id?: string
+          index_fund_id?: string
+          portfolio_id?: string
+          units?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "index_fund_holdings_index_fund_id_fkey"
+            columns: ["index_fund_id"]
+            isOneToOne: false
+            referencedRelation: "index_funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "index_fund_holdings_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      index_funds: {
+        Row: {
+          amc: string
+          aum: string | null
+          base_nav: number
+          created_at: string | null
+          description: string | null
+          expense_ratio: number | null
+          five_year_return: number | null
+          id: string
+          name: string
+          nav: number
+          one_year_return: number | null
+          symbol: string
+          three_year_return: number | null
+          tracking_error: number | null
+          tracking_index: string
+          updated_at: string | null
+        }
+        Insert: {
+          amc: string
+          aum?: string | null
+          base_nav: number
+          created_at?: string | null
+          description?: string | null
+          expense_ratio?: number | null
+          five_year_return?: number | null
+          id?: string
+          name: string
+          nav: number
+          one_year_return?: number | null
+          symbol: string
+          three_year_return?: number | null
+          tracking_error?: number | null
+          tracking_index: string
+          updated_at?: string | null
+        }
+        Update: {
+          amc?: string
+          aum?: string | null
+          base_nav?: number
+          created_at?: string | null
+          description?: string | null
+          expense_ratio?: number | null
+          five_year_return?: number | null
+          id?: string
+          name?: string
+          nav?: number
+          one_year_return?: number | null
+          symbol?: string
+          three_year_return?: number | null
+          tracking_error?: number | null
+          tracking_index?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       lesson_progress: {
         Row: {
           bookmarked: boolean | null
@@ -345,6 +447,108 @@ export type Database = {
           order_index?: number
           slug?: string
           title?: string
+        }
+        Relationships: []
+      }
+      mutual_fund_holdings: {
+        Row: {
+          average_nav: number
+          created_at: string | null
+          id: string
+          mutual_fund_id: string
+          portfolio_id: string
+          units: number
+          updated_at: string | null
+        }
+        Insert: {
+          average_nav: number
+          created_at?: string | null
+          id?: string
+          mutual_fund_id: string
+          portfolio_id: string
+          units: number
+          updated_at?: string | null
+        }
+        Update: {
+          average_nav?: number
+          created_at?: string | null
+          id?: string
+          mutual_fund_id?: string
+          portfolio_id?: string
+          units?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mutual_fund_holdings_mutual_fund_id_fkey"
+            columns: ["mutual_fund_id"]
+            isOneToOne: false
+            referencedRelation: "mutual_funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mutual_fund_holdings_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mutual_funds: {
+        Row: {
+          amc: string
+          aum: string | null
+          base_nav: number
+          category: string
+          created_at: string | null
+          description: string | null
+          expense_ratio: number | null
+          five_year_return: number | null
+          id: string
+          name: string
+          nav: number
+          one_year_return: number | null
+          risk_level: string | null
+          symbol: string
+          three_year_return: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          amc: string
+          aum?: string | null
+          base_nav: number
+          category: string
+          created_at?: string | null
+          description?: string | null
+          expense_ratio?: number | null
+          five_year_return?: number | null
+          id?: string
+          name: string
+          nav: number
+          one_year_return?: number | null
+          risk_level?: string | null
+          symbol: string
+          three_year_return?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          amc?: string
+          aum?: string | null
+          base_nav?: number
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          expense_ratio?: number | null
+          five_year_return?: number | null
+          id?: string
+          name?: string
+          nav?: number
+          one_year_return?: number | null
+          risk_level?: string | null
+          symbol?: string
+          three_year_return?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
