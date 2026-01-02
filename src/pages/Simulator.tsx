@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStockSimulation, Stock, Holding } from "@/hooks/useStockSimulation";
 import { useFundSimulation } from "@/hooks/useFundSimulation";
+import { useChallengeTracker } from "@/hooks/useChallengeTracker";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { 
@@ -84,6 +85,14 @@ export default function Simulator() {
     buyMutualFund, sellMutualFund, buyIndexFund, sellIndexFund,
     refreshData: refreshFundData
   } = useFundSimulation(portfolio?.id || null, simulatedYear);
+
+  const { 
+    trackStockPurchase, 
+    trackIndexFundPurchase, 
+    trackMutualFundPurchase,
+    trackPortfolioReturn,
+    trackYearsHeld
+  } = useChallengeTracker();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [sectorFilter, setSectorFilter] = useState<string>("all");
@@ -106,6 +115,25 @@ export default function Simulator() {
     investedValue: metrics.investedValue + totalFundsInvested,
     fundsValue: totalFundsValue,
   };
+
+  // Track years held and portfolio return for challenges
+  useEffect(() => {
+    if (!user || simulatedYear < 1) return;
+    
+    // Track years held for Market Timer challenge
+    if (holdings.length > 0 || mfHoldings.length > 0 || ifHoldings.length > 0) {
+      trackYearsHeld(simulatedYear);
+    }
+    
+    // Track portfolio return for Beat Inflation challenge
+    const totalInvested = combinedMetrics.investedValue;
+    if (totalInvested > 0) {
+      const returnPercent = ((combinedMetrics.totalValue - 100000) / 100000) * 100;
+      if (returnPercent > 0) {
+        trackPortfolioReturn(returnPercent);
+      }
+    }
+  }, [simulatedYear, user, holdings.length, mfHoldings.length, ifHoldings.length]);
 
   const filteredStocks = stocks.filter(stock => {
     const matchesSearch = stock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -140,6 +168,29 @@ export default function Simulator() {
           title: "Stock Purchased! 🎉",
           description: `Bought ${quantity} share(s) of ${selectedStock.symbol} for ₹${totalCost.toLocaleString('en-IN')}`,
         });
+
+        // Track challenge progress after successful purchase
+        const updatedHoldings = [...holdings];
+        if (existingHolding) {
+          const idx = updatedHoldings.findIndex(h => h.stock_id === selectedStock.id);
+          if (idx !== -1) updatedHoldings[idx] = { ...updatedHoldings[idx], quantity: updatedHoldings[idx].quantity + quantity };
+        } else {
+          updatedHoldings.push({ 
+            stock_id: selectedStock.id, 
+            quantity, 
+            stock: selectedStock 
+          } as any);
+        }
+        
+        const uniqueSectors = [...new Set(updatedHoldings.map(h => h.stock?.sector).filter(Boolean))];
+        const newPortfolioValue = metrics.totalValue + totalCost;
+        
+        trackStockPurchase(
+          selectedStock.sector,
+          updatedHoldings.length,
+          uniqueSectors as string[],
+          newPortfolioValue
+        );
       } else {
         const holding = holdings.find(h => h.stock_id === selectedStock.id);
         if (holding && holding.profitLoss < 0) {
@@ -598,6 +649,7 @@ export default function Simulator() {
                       refreshStockData();
                       refreshFundData();
                     }}
+                    onTrackMutualFundPurchase={trackMutualFundPurchase}
                   />
                 </TabsContent>
 
@@ -617,6 +669,7 @@ export default function Simulator() {
                       refreshStockData();
                       refreshFundData();
                     }}
+                    onTrackIndexFundPurchase={trackIndexFundPurchase}
                   />
                 </TabsContent>
               </Tabs>
