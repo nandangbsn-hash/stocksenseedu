@@ -217,29 +217,39 @@ export default function Simulator() {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
-                  Stock Simulator
+                  Investment Simulator
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">
-                  Live prices update every 10 seconds • Educational simulation
+                  Stocks • Mutual Funds • Index Funds • Educational simulation
                 </p>
               </div>
-              <div className="flex items-center gap-3 bg-gradient-to-r from-primary/10 via-accent/10 to-success/10 border border-primary/20 rounded-2xl px-5 py-3 shadow-soft">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
-                    <Calendar className="w-5 h-5 text-white" />
+              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+                {/* Year Countdown Timer */}
+                {portfolio?.year_started_at && (
+                  <YearCountdownTimer 
+                    yearStartedAt={portfolio.year_started_at} 
+                    currentYear={simulatedYear}
+                    maxYears={maxYears}
+                  />
+                )}
+                <div className="flex items-center gap-3 bg-gradient-to-r from-primary/10 via-accent/10 to-success/10 border border-primary/20 rounded-2xl px-5 py-3 shadow-soft">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+                      <Calendar className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <span className="font-display font-bold text-2xl text-foreground">Year {simulatedYear}</span>
+                      <p className="text-[10px] text-muted-foreground font-medium">of {maxYears}</p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-display font-bold text-2xl text-foreground">Year {simulatedYear}</span>
-                    <p className="text-[10px] text-muted-foreground font-medium">of {maxYears}</p>
+                  <div className="h-10 w-px bg-border/50" />
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-1.5 bg-warning/15 px-3 py-1.5 rounded-lg border border-warning/20">
+                      <Zap className="w-3.5 h-3.5 text-warning" />
+                      <span className="text-xs font-bold text-warning-foreground">1 day = 1 year</span>
+                    </div>
+                    <Progress value={(simulatedYear / maxYears) * 100} className="w-24 h-1.5" />
                   </div>
-                </div>
-                <div className="h-10 w-px bg-border/50" />
-                <div className="flex flex-col items-center gap-1">
-                  <div className="flex items-center gap-1.5 bg-warning/15 px-3 py-1.5 rounded-lg border border-warning/20">
-                    <Zap className="w-3.5 h-3.5 text-warning" />
-                    <span className="text-xs font-bold text-warning-foreground">1 day = 1 year</span>
-                  </div>
-                  <Progress value={(simulatedYear / maxYears) * 100} className="w-24 h-1.5" />
                 </div>
               </div>
             </div>
@@ -276,21 +286,26 @@ export default function Simulator() {
                   <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl p-4 border border-primary/10">
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1 font-medium">Total Value</p>
                     <p className="text-3xl font-display font-bold text-foreground animate-fade-in number-display">
-                      ₹{metrics.totalValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      ₹{combinedMetrics.totalValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                     </p>
+                    {totalFundsValue > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Includes ₹{totalFundsValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })} in funds
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-muted/50 rounded-xl p-3 border border-border/50 hover:border-primary/30 transition-colors">
                       <p className="text-xs text-muted-foreground">Invested</p>
                       <p className="font-bold text-lg">
-                        ₹{metrics.investedValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                        ₹{combinedMetrics.investedValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                       </p>
                     </div>
                     <div className="bg-muted/50 rounded-xl p-3 border border-border/50 hover:border-primary/30 transition-colors">
                       <p className="text-xs text-muted-foreground">Cash</p>
                       <p className="font-bold text-lg text-primary">
-                        ₹{metrics.cashBalance.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                        ₹{combinedMetrics.cashBalance.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                       </p>
                     </div>
                   </div>
@@ -448,101 +463,163 @@ export default function Simulator() {
               </div>
             </div>
 
-            {/* Right Column - Stock List */}
+            {/* Right Column - Asset Tabs */}
             <div className="xl:col-span-3">
-              <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
-                {/* Header with live indicator */}
-                <div className="bg-gradient-to-r from-primary/5 via-transparent to-success/5 px-4 py-3 border-b border-border flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <div className="w-2.5 h-2.5 bg-success rounded-full animate-pulse" />
-                      <div className="absolute inset-0 w-2.5 h-2.5 bg-success rounded-full animate-ping opacity-75" />
-                    </div>
-                    <span className="text-sm font-medium text-foreground">Live Market Data</span>
-                    <span className="text-xs text-muted-foreground">• {stocks.length} stocks</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <TrendingUp className="w-3 h-3 text-success" />
-                    <span>{stocks.filter(s => s.changePercent >= 0).length} up</span>
-                    <TrendingDown className="w-3 h-3 text-destructive" />
-                    <span>{stocks.filter(s => s.changePercent < 0).length} down</span>
-                  </div>
-                </div>
-                
-                {/* Search and Filter */}
-                <div className="p-4 border-b border-border">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search stocks..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-muted-foreground" />
-                      <select
-                        value={sectorFilter}
-                        onChange={(e) => setSectorFilter(e.target.value)}
-                        className="bg-background border border-input rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option value="all">All Sectors</option>
-                        {sectors.map(sector => (
-                          <option key={sector} value={sector}>{sector}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
+              {/* Asset Type Tabs */}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="w-full justify-start bg-card border border-border rounded-xl p-1 mb-4">
+                  <TabsTrigger value="stocks" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <BarChart3 className="w-4 h-4" />
+                    Stocks
+                    <span className="text-xs opacity-70">({stocks.length})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="mutual" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Building2 className="w-4 h-4" />
+                    Mutual Funds
+                    <span className="text-xs opacity-70">({mutualFunds.length})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="index" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Landmark className="w-4 h-4" />
+                    Index Funds
+                    <span className="text-xs opacity-70">({indexFunds.length})</span>
+                  </TabsTrigger>
+                </TabsList>
 
-                {/* Stock Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-muted/50">
-                      <tr className="text-left text-xs text-muted-foreground">
-                        <th className="p-3 font-medium">Stock</th>
-                        <th className="p-3 font-medium">Sector</th>
-                        <th className="p-3 font-medium text-right">Price</th>
-                        <th className="p-3 font-medium text-right">Change</th>
-                        <th className="p-3 font-medium text-center">Risk</th>
-                        <th className="p-3 font-medium text-center">Holding</th>
-                        <th className="p-3 font-medium text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50">
-                      {filteredStocks.map(stock => {
-                        const holding = getHolding(stock.id);
-                        
-                        return (
-                          <StockRow
-                            key={stock.id}
-                            stock={stock}
-                            holding={holding}
-                            onBuy={(s) => {
-                              setSelectedStock(s);
-                              setTradeType('buy');
-                              setQuantity(1);
-                            }}
-                            onSell={(s) => {
-                              setSelectedStock(s);
-                              setTradeType('sell');
-                              setQuantity(1);
-                            }}
+                {/* Stocks Tab */}
+                <TabsContent value="stocks" className="m-0">
+                  <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
+                    {/* Header with live indicator */}
+                    <div className="bg-gradient-to-r from-primary/5 via-transparent to-success/5 px-4 py-3 border-b border-border flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <div className="w-2.5 h-2.5 bg-success rounded-full animate-pulse" />
+                          <div className="absolute inset-0 w-2.5 h-2.5 bg-success rounded-full animate-ping opacity-75" />
+                        </div>
+                        <span className="text-sm font-medium text-foreground">Live Market Data</span>
+                        <span className="text-xs text-muted-foreground">• {stocks.length} stocks</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <TrendingUp className="w-3 h-3 text-success" />
+                        <span>{stocks.filter(s => s.changePercent >= 0).length} up</span>
+                        <TrendingDown className="w-3 h-3 text-destructive" />
+                        <span>{stocks.filter(s => s.changePercent < 0).length} down</span>
+                      </div>
+                    </div>
+                    
+                    {/* Search and Filter */}
+                    <div className="p-4 border-b border-border">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search stocks..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9"
                           />
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Filter className="w-4 h-4 text-muted-foreground" />
+                          <select
+                            value={sectorFilter}
+                            onChange={(e) => setSectorFilter(e.target.value)}
+                            className="bg-background border border-input rounded-lg px-3 py-2 text-sm"
+                          >
+                            <option value="all">All Sectors</option>
+                            {sectors.map(sector => (
+                              <option key={sector} value={sector}>{sector}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
 
-                {filteredStocks.length === 0 && (
-                  <div className="p-8 text-center text-muted-foreground">
-                    No stocks found matching your search.
+                    {/* Stock Table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-muted/50">
+                          <tr className="text-left text-xs text-muted-foreground">
+                            <th className="p-3 font-medium">Stock</th>
+                            <th className="p-3 font-medium">Sector</th>
+                            <th className="p-3 font-medium text-right">Price</th>
+                            <th className="p-3 font-medium text-right">Change</th>
+                            <th className="p-3 font-medium text-center">Risk</th>
+                            <th className="p-3 font-medium text-center">Holding</th>
+                            <th className="p-3 font-medium text-center">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/50">
+                          {filteredStocks.map(stock => {
+                            const holding = getHolding(stock.id);
+                            
+                            return (
+                              <StockRow
+                                key={stock.id}
+                                stock={stock}
+                                holding={holding}
+                                onBuy={(s) => {
+                                  setSelectedStock(s);
+                                  setTradeType('buy');
+                                  setQuantity(1);
+                                }}
+                                onSell={(s) => {
+                                  setSelectedStock(s);
+                                  setTradeType('sell');
+                                  setQuantity(1);
+                                }}
+                              />
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {filteredStocks.length === 0 && (
+                      <div className="p-8 text-center text-muted-foreground">
+                        No stocks found matching your search.
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </TabsContent>
+
+                {/* Mutual Funds Tab */}
+                <TabsContent value="mutual" className="m-0">
+                  <FundsSection
+                    mutualFunds={mutualFunds}
+                    indexFunds={[]}
+                    mfHoldings={mfHoldings}
+                    ifHoldings={[]}
+                    cashBalance={metrics.cashBalance}
+                    onBuyMutualFund={buyMutualFund}
+                    onSellMutualFund={sellMutualFund}
+                    onBuyIndexFund={buyIndexFund}
+                    onSellIndexFund={sellIndexFund}
+                    onRefreshPortfolio={() => {
+                      refreshStockData();
+                      refreshFundData();
+                    }}
+                  />
+                </TabsContent>
+
+                {/* Index Funds Tab */}
+                <TabsContent value="index" className="m-0">
+                  <FundsSection
+                    mutualFunds={[]}
+                    indexFunds={indexFunds}
+                    mfHoldings={[]}
+                    ifHoldings={ifHoldings}
+                    cashBalance={metrics.cashBalance}
+                    onBuyMutualFund={buyMutualFund}
+                    onSellMutualFund={sellMutualFund}
+                    onBuyIndexFund={buyIndexFund}
+                    onSellIndexFund={sellIndexFund}
+                    onRefreshPortfolio={() => {
+                      refreshStockData();
+                      refreshFundData();
+                    }}
+                  />
+                </TabsContent>
+              </Tabs>
 
               {/* Disclaimer */}
               <div className="mt-4 bg-warning/5 border border-warning/20 rounded-xl p-4 flex items-start gap-3">
