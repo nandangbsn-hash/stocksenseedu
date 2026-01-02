@@ -1,143 +1,57 @@
-import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { ChallengeCard, Challenge } from "@/components/ChallengeCard";
-import { BadgeCard, Badge } from "@/components/BadgeCard";
+import { ChallengeCard } from "@/components/ChallengeCard";
+import { BadgeCard } from "@/components/BadgeCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Award, Target, Shield, Clock, Layers, TrendingUp, Zap } from "lucide-react";
+import { Trophy, Award, Loader2, LogIn } from "lucide-react";
+import { useChallenges, Challenge } from "@/hooks/useChallenges";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 
-const challenges: Challenge[] = [
-  {
-    id: "1",
-    title: "Build a Low-Risk Portfolio",
-    description: "Create a diversified portfolio with at least 5 different stocks, keeping your risk meter below 40%.",
-    difficulty: "Easy",
-    participants: 2847,
-    daysLeft: 5,
-    progress: 60,
-    completed: false,
-    locked: false,
-    reward: "Diversification Pro Badge",
-  },
-  {
-    id: "2",
-    title: "Beat Inflation",
-    description: "Grow your portfolio by at least 7% to beat the average inflation rate. Learn why this matters.",
-    difficulty: "Medium",
-    participants: 1923,
-    daysLeft: 12,
-    progress: 25,
-    completed: false,
-    locked: false,
-    reward: "Inflation Fighter Badge",
-  },
-  {
-    id: "3",
-    title: "Survive a Market Crash",
-    description: "Experience a simulated 20% market crash and maintain your portfolio without panic selling.",
-    difficulty: "Hard",
-    participants: 856,
-    daysLeft: 8,
-    progress: 0,
-    completed: false,
-    locked: false,
-    reward: "Diamond Hands Badge",
-  },
-  {
-    id: "4",
-    title: "Sector Explorer",
-    description: "Invest in at least one stock from 5 different sectors to understand market diversity.",
-    difficulty: "Easy",
-    participants: 3421,
-    daysLeft: 14,
-    progress: 0,
-    completed: true,
-    locked: false,
-    reward: "Sector Expert Badge",
-  },
-  {
-    id: "5",
-    title: "Long-Term Thinker",
-    description: "Hold your investments for 30 simulated days without selling. Patience is key!",
-    difficulty: "Medium",
-    participants: 1247,
-    daysLeft: 30,
-    progress: 0,
-    completed: false,
-    locked: true,
-    reward: "Patient Investor Badge",
-  },
-];
-
-const badges: Badge[] = [
-  {
-    id: "1",
-    name: "First Investment",
-    description: "Made your first stock purchase",
-    icon: Zap,
-    earned: true,
-    earnedDate: "Dec 28, 2024",
-    color: "gradient-hero",
-  },
-  {
-    id: "2",
-    name: "Diversification Pro",
-    description: "Invested in 5+ different stocks",
-    icon: Layers,
-    earned: true,
-    earnedDate: "Dec 29, 2024",
-    color: "gradient-success",
-  },
-  {
-    id: "3",
-    name: "Long-Term Thinker",
-    description: "Held investments for 30+ days",
-    icon: Clock,
-    earned: false,
-    color: "gradient-accent",
-  },
-  {
-    id: "4",
-    name: "Risk Manager",
-    description: "Kept portfolio risk below 30%",
-    icon: Shield,
-    earned: false,
-    color: "gradient-hero",
-  },
-  {
-    id: "5",
-    name: "Sector Expert",
-    description: "Invested across 5+ sectors",
-    icon: Target,
-    earned: true,
-    earnedDate: "Dec 30, 2024",
-    color: "gradient-success",
-  },
-  {
-    id: "6",
-    name: "Inflation Fighter",
-    description: "Beat the inflation rate",
-    icon: TrendingUp,
-    earned: false,
-    color: "gradient-accent",
-  },
-];
-
 export default function Challenges() {
-  const [activeChallenges] = useState(challenges);
-  const [earnedBadges] = useState(badges);
+  const { user } = useAuth();
+  const { challenges, badges, loading, startChallenge } = useChallenges();
 
   const handleStartChallenge = (challenge: Challenge) => {
-    toast({
-      title: challenge.completed ? "Viewing Results" : "Challenge Started!",
-      description: challenge.completed
-        ? `Review your performance in "${challenge.title}"`
-        : `Good luck with "${challenge.title}"! Remember, it's about learning.`,
-    });
+    if (challenge.completed) {
+      toast({
+        title: "Challenge Completed! 🎉",
+        description: `You've already completed "${challenge.title}" and earned ${challenge.reward_xp} XP!`,
+      });
+      return;
+    }
+
+    if (challenge.started) {
+      toast({
+        title: "Keep Going! 💪",
+        description: `Continue working on "${challenge.title}" to earn your rewards.`,
+      });
+      return;
+    }
+
+    startChallenge(challenge.id);
   };
 
-  const earnedCount = earnedBadges.filter((b) => b.earned).length;
+  const earnedCount = badges.filter((b) => b.earned).length;
+  const completedChallenges = challenges.filter((c) => c.completed).length;
+  const inProgressChallenges = challenges.filter((c) => c.started && !c.completed).length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="pt-20 pb-16 flex items-center justify-center min-h-[60vh]">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading challenges...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -145,7 +59,7 @@ export default function Challenges() {
       <main className="pt-20 pb-16">
         <div className="container mx-auto px-4">
           {/* Header */}
-          <div className="max-w-3xl mx-auto text-center mb-12">
+          <div className="max-w-3xl mx-auto text-center mb-8">
             <span className="inline-block px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-4">
               Weekly Challenges
             </span>
@@ -157,11 +71,54 @@ export default function Challenges() {
             </p>
           </div>
 
+          {/* Stats Summary */}
+          {user && (
+            <div className="max-w-3xl mx-auto mb-8">
+              <div className="bg-card rounded-2xl border border-border p-6 shadow-soft">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold text-primary">{completedChallenges}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">Completed</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold text-secondary">{inProgressChallenges}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">In Progress</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold text-foreground">{earnedCount}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">Badges Earned</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Login Prompt */}
+          {!user && (
+            <div className="max-w-3xl mx-auto mb-8">
+              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 text-center">
+                <LogIn className="w-8 h-8 text-primary mx-auto mb-3" />
+                <h3 className="font-display font-bold text-foreground mb-2">
+                  Login to Track Progress
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Sign in to start challenges, earn XP, and collect badges!
+                </p>
+                <Link to="/auth">
+                  <Button>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Login / Sign Up
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+
           <Tabs defaultValue="challenges" className="max-w-5xl mx-auto">
             <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
               <TabsTrigger value="challenges" className="flex items-center gap-2">
                 <Trophy className="w-4 h-4" />
-                Challenges
+                Challenges ({challenges.length})
               </TabsTrigger>
               <TabsTrigger value="badges" className="flex items-center gap-2">
                 <Award className="w-4 h-4" />
@@ -171,24 +128,31 @@ export default function Challenges() {
 
             <TabsContent value="challenges">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {activeChallenges.map((challenge, index) => (
+                {challenges.map((challenge, index) => (
                   <div
                     key={challenge.id}
                     className="animate-slide-up"
-                    style={{ animationDelay: `${index * 0.1}s` }}
+                    style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <ChallengeCard challenge={challenge} onStart={handleStartChallenge} />
                   </div>
                 ))}
               </div>
+
+              {challenges.length === 0 && (
+                <div className="text-center py-12">
+                  <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No challenges available yet.</p>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="badges">
               <div className="mb-8">
                 <div className="bg-card rounded-2xl border border-border p-6 shadow-soft">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-display font-bold text-foreground">Your Badges</h3>
+                      <h3 className="font-display font-bold text-foreground">Your Badge Collection</h3>
                       <p className="text-sm text-muted-foreground">
                         Collect badges by completing challenges and learning
                       </p>
@@ -201,17 +165,24 @@ export default function Challenges() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {earnedBadges.map((badge, index) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {badges.map((badge, index) => (
                   <div
                     key={badge.id}
                     className="animate-slide-up"
-                    style={{ animationDelay: `${index * 0.05}s` }}
+                    style={{ animationDelay: `${index * 0.03}s` }}
                   >
                     <BadgeCard badge={badge} />
                   </div>
                 ))}
               </div>
+
+              {badges.length === 0 && (
+                <div className="text-center py-12">
+                  <Award className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No badges available yet.</p>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
 
