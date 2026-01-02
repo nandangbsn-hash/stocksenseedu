@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Shield, TrendingUp, BookOpen, Sparkles } from "lucide-react";
+import { ArrowRight, Shield, TrendingUp, BookOpen, Sparkles } from "lucide-react";
 
 export function HeroSection() {
   return (
@@ -47,10 +47,12 @@ export function HeroSection() {
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            <Button variant="heroOutline" size="xl">
-              <Play className="w-5 h-5" />
-              Watch 60-sec Demo
-            </Button>
+            <Link to="/learn">
+              <Button variant="heroOutline" size="xl">
+                <BookOpen className="w-5 h-5" />
+                Start Learning
+              </Button>
+            </Link>
           </div>
 
           {/* Trust Indicators */}
