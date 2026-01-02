@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Search, 
   Filter, 
@@ -52,6 +51,9 @@ export function FundsSection({
   const [tradeType, setTradeType] = useState<TradeType>('buy');
   const [amount, setAmount] = useState<number>(1000);
   const [units, setUnits] = useState<number>(1);
+
+  const showMutualFunds = mutualFunds.length > 0;
+  const showIndexFunds = indexFunds.length > 0;
 
   const getMfHolding = (fundId: string) => mfHoldings.find(h => h.mutual_fund_id === fundId);
   const getIfHolding = (fundId: string) => ifHoldings.find(h => h.index_fund_id === fundId);
@@ -134,70 +136,62 @@ export function FundsSection({
 
   return (
     <>
-      <Tabs defaultValue="mutual" className="w-full">
-        <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-primary/5 via-transparent to-accent/5 px-4 py-3 border-b border-border">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <TabsList className="bg-muted/50">
-                <TabsTrigger value="mutual" className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  Mutual Funds
-                  <span className="text-xs text-muted-foreground">({mutualFunds.length})</span>
-                </TabsTrigger>
-                <TabsTrigger value="index" className="flex items-center gap-2">
-                  <Landmark className="w-4 h-4" />
-                  Index Funds
-                  <span className="text-xs text-muted-foreground">({indexFunds.length})</span>
-                </TabsTrigger>
-              </TabsList>
-              
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <div className="relative">
-                  <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                </div>
-                <span>Live NAV Updates</span>
-              </div>
+      <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-primary/5 via-transparent to-accent/5 px-4 py-3 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <div className="w-2.5 h-2.5 bg-success rounded-full animate-pulse" />
             </div>
+            <span className="text-sm font-medium text-foreground">
+              {showMutualFunds ? 'Mutual Funds' : 'Index Funds'}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              • {showMutualFunds ? mutualFunds.length : indexFunds.length} funds
+            </span>
           </div>
+          <div className="text-xs text-muted-foreground">
+            Live NAV Updates
+          </div>
+        </div>
 
-          {/* Search and Filter */}
-          <div className="p-4 border-b border-border">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search funds..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <TabsContent value="mutual" className="mt-0 p-0">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-muted-foreground" />
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="bg-background border border-input rounded-lg px-3 py-2 text-sm"
-                  >
-                    <option value="all">All Categories</option>
-                    <option value="large_cap">Large Cap</option>
-                    <option value="mid_cap">Mid Cap</option>
-                    <option value="small_cap">Small Cap</option>
-                  </select>
-                </div>
-              </TabsContent>
+        {/* Search and Filter */}
+        <div className="p-4 border-b border-border">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={showMutualFunds ? "Search mutual funds..." : "Search index funds..."}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
             </div>
+            {showMutualFunds && (
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="bg-background border border-input rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="large_cap">Large Cap</option>
+                  <option value="mid_cap">Mid Cap</option>
+                  <option value="small_cap">Small Cap</option>
+                </select>
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Mutual Funds Tab */}
-          <TabsContent value="mutual" className="m-0">
-            <div className="p-4">
-              {/* Category headers */}
+        {/* Content */}
+        <div className="p-4">
+          {showMutualFunds && (
+            <>
               {['large_cap', 'mid_cap', 'small_cap'].map(category => {
                 const fundsInCategory = filteredMutualFunds.filter(f => f.category === category);
-                if (fundsInCategory.length === 0 && categoryFilter !== 'all') return null;
+                if (fundsInCategory.length === 0) return null;
                 if (categoryFilter !== 'all' && categoryFilter !== category) return null;
                 
                 const categoryLabel = category === 'large_cap' ? 'Large Cap' : 
@@ -242,12 +236,11 @@ export function FundsSection({
                   </div>
                 );
               })}
-            </div>
-          </TabsContent>
+            </>
+          )}
 
-          {/* Index Funds Tab */}
-          <TabsContent value="index" className="m-0">
-            <div className="p-4">
+          {showIndexFunds && (
+            <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Landmark className="w-4 h-4 text-primary" />
@@ -276,9 +269,9 @@ export function FundsSection({
                 })}
               </div>
             </div>
-          </TabsContent>
+          )}
         </div>
-      </Tabs>
+      </div>
 
       {/* Trade Dialog */}
       <Dialog open={!!selectedFund} onOpenChange={() => setSelectedFund(null)}>
