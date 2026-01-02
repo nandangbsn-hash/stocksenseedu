@@ -27,6 +27,8 @@ interface FundsSectionProps {
   onBuyIndexFund: (fundId: string, amount: number, cashBalance: number) => Promise<{ success: boolean; units: number }>;
   onSellIndexFund: (fundId: string, units: number, cashBalance: number) => Promise<{ success: boolean }>;
   onRefreshPortfolio: () => void;
+  onTrackMutualFundPurchase?: (categories: string[]) => void;
+  onTrackIndexFundPurchase?: (totalOwned: number) => void;
 }
 
 type FundType = 'mutual' | 'index';
@@ -43,6 +45,8 @@ export function FundsSection({
   onBuyIndexFund,
   onSellIndexFund,
   onRefreshPortfolio,
+  onTrackMutualFundPurchase,
+  onTrackIndexFundPurchase,
 }: FundsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -91,6 +95,14 @@ export function FundsSection({
             title: "Investment Successful! 🎉",
             description: `Invested ₹${amount.toLocaleString('en-IN')} in ${selectedFund.name} (${result.units.toFixed(3)} units)`,
           });
+          
+          // Track mutual fund purchase for challenges
+          if (onTrackMutualFundPurchase) {
+            const fund = selectedFund as MutualFund;
+            const existingCategories = mfHoldings.map(h => h.fund.category);
+            const allCategories = [...existingCategories, fund.category];
+            onTrackMutualFundPurchase(allCategories);
+          }
         } else {
           await onSellMutualFund(selectedFund.id, units, cashBalance);
           toast({
@@ -105,6 +117,13 @@ export function FundsSection({
             title: "Investment Successful! 🎉",
             description: `Invested ₹${amount.toLocaleString('en-IN')} in ${selectedFund.name} (${result.units.toFixed(3)} units)`,
           });
+          
+          // Track index fund purchase for challenges
+          if (onTrackIndexFundPurchase) {
+            const existingFundIds = new Set(ifHoldings.map(h => h.index_fund_id));
+            existingFundIds.add(selectedFund.id);
+            onTrackIndexFundPurchase(existingFundIds.size);
+          }
         } else {
           await onSellIndexFund(selectedFund.id, units, cashBalance);
           toast({
