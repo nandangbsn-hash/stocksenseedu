@@ -19,6 +19,7 @@ export interface MutualFund {
   description: string | null;
   change: number;
   changePercent: number;
+  yearlyNav: number; // Stable reference for the year
 }
 
 export interface IndexFund {
@@ -38,6 +39,7 @@ export interface IndexFund {
   description: string | null;
   change: number;
   changePercent: number;
+  yearlyNav: number; // Stable reference for the year
 }
 
 export interface MutualFundHolding {
@@ -62,16 +64,29 @@ export interface IndexFundHolding {
   profitLossPercent: number;
 }
 
-const LIVE_UPDATE_INTERVAL = 15 * 1000; // Update every 15 seconds
-const YEAR_DURATION = 24 * 60 * 60 * 1000; // 1 real day = 1 simulated year
+const LIVE_UPDATE_INTERVAL = 20 * 1000; // Update every 20 seconds
 
-// Volatility based on fund type
+// Annual volatility by fund type - realistic ranges
 const FUND_VOLATILITY = {
-  large_cap: { min: -0.12, max: 0.20 },
-  mid_cap: { min: -0.20, max: 0.35 },
-  small_cap: { min: -0.30, max: 0.50 },
-  index: { min: -0.15, max: 0.25 },
+  large_cap: { min: -0.15, max: 0.28 },  // Conservative
+  mid_cap: { min: -0.25, max: 0.45 },    // Moderate
+  small_cap: { min: -0.35, max: 0.60 },  // Aggressive
+  index: { min: -0.18, max: 0.30 },      // Market tracking
 };
+
+// Small intra-day fluctuation
+const INTRADAY_FLUCTUATION = {
+  large_cap: 0.001,
+  mid_cap: 0.0015,
+  small_cap: 0.002,
+  index: 0.0008,
+};
+
+// Seeded random for consistent year-over-year returns
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
 
 export function useFundSimulation(portfolioId: string | null, simulatedYear: number) {
   const { user } = useAuth();
@@ -83,19 +98,35 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
   
   const navCacheRef = useRef<Map<string, number>>(new Map());
 
-  // Apply NAV changes based on volatility
-  const applyNAVChange = useCallback((baseNav: number, category: string, yearsPassed: number) => {
+  // Calculate yearly NAV with seeded randomness
+  const calculateYearlyNav = useCallback((fundId: string, baseNav: number, category: string, year: number): number => {
+    const cacheKey = `${fundId}-${year}`;
+    
+    if (navCacheRef.current.has(cacheKey)) {
+      return navCacheRef.current.get(cacheKey)!;
+    }
+    
     const volatility = FUND_VOLATILITY[category as keyof typeof FUND_VOLATILITY] || FUND_VOLATILITY.large_cap;
     
     let nav = baseNav;
-    for (let i = 0; i < yearsPassed; i++) {
-      const marketTrend = 0.02 + (Math.random() - 0.4) * 0.1;
-      const randomChange = volatility.min + Math.random() * (volatility.max - volatility.min);
-      const totalChange = 1 + randomChange + marketTrend;
-      nav = nav * Math.max(0.3, totalChange);
+    for (let y = 1; y < year; y++) {
+      // Use seeded random for consistent returns
+      const seed = parseInt(fundId.replace(/-/g, '').slice(0, 8), 16) + y;
+      const rand = seededRandom(seed);
+      
+      // Market bias (slight positive, funds tend to grow)
+      const marketBias = 0.08; // 8% average mutual fund return
+      
+      const annualReturn = volatility.min + rand * (volatility.max - volatility.min) + marketBias * (rand > 0.25 ? 1 : -0.5);
+      
+      nav = nav * (1 + annualReturn);
+      nav = Math.max(nav, baseNav * 0.2); // Floor at 20% of base
     }
     
-    return Math.round(nav * 100) / 100;
+    const finalNav = Math.round(nav * 100) / 100;
+    navCacheRef.current.set(cacheKey, finalNav);
+    
+    return finalNav;
   }, []);
 
   // Fetch mutual funds
@@ -111,26 +142,15 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
     }
 
     const simulatedFunds = data.map(fund => {
-      const cacheKey = `mf-${fund.id}-${simulatedYear}`;
-      let newNav: number;
+      const yearlyNav = calculateYearlyNav(fund.id, Number(fund.base_nav), fund.category, simulatedYear);
       
-      if (navCacheRef.current.has(cacheKey)) {
-        newNav = navCacheRef.current.get(cacheKey)!;
-      } else {
-        newNav = applyNAVChange(Number(fund.base_nav), fund.category, simulatedYear - 1);
-        navCacheRef.current.set(cacheKey, newNav);
-      }
-      
-      // Add small intra-day fluctuation
-      const intraDayChange = 1 + (Math.random() - 0.5) * 0.01;
-      newNav = newNav * intraDayChange;
-      
-      const change = newNav - Number(fund.base_nav);
+      const change = yearlyNav - Number(fund.base_nav);
       const changePercent = (change / Number(fund.base_nav)) * 100;
 
       return {
         ...fund,
-        nav: Math.round(newNav * 100) / 100,
+        nav: yearlyNav,
+        yearlyNav: yearlyNav,
         base_nav: Number(fund.base_nav),
         expense_ratio: Number(fund.expense_ratio),
         one_year_return: Number(fund.one_year_return),
@@ -143,7 +163,7 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
 
     setMutualFunds(simulatedFunds);
     return simulatedFunds;
-  }, [simulatedYear, applyNAVChange]);
+  }, [simulatedYear, calculateYearlyNav]);
 
   // Fetch index funds
   const fetchIndexFunds = useCallback(async () => {
@@ -158,26 +178,15 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
     }
 
     const simulatedFunds = data.map(fund => {
-      const cacheKey = `if-${fund.id}-${simulatedYear}`;
-      let newNav: number;
+      const yearlyNav = calculateYearlyNav(fund.id, Number(fund.base_nav), 'index', simulatedYear);
       
-      if (navCacheRef.current.has(cacheKey)) {
-        newNav = navCacheRef.current.get(cacheKey)!;
-      } else {
-        newNav = applyNAVChange(Number(fund.base_nav), 'index', simulatedYear - 1);
-        navCacheRef.current.set(cacheKey, newNav);
-      }
-      
-      // Add small intra-day fluctuation
-      const intraDayChange = 1 + (Math.random() - 0.5) * 0.008;
-      newNav = newNav * intraDayChange;
-      
-      const change = newNav - Number(fund.base_nav);
+      const change = yearlyNav - Number(fund.base_nav);
       const changePercent = (change / Number(fund.base_nav)) * 100;
 
       return {
         ...fund,
-        nav: Math.round(newNav * 100) / 100,
+        nav: yearlyNav,
+        yearlyNav: yearlyNav,
         base_nav: Number(fund.base_nav),
         expense_ratio: Number(fund.expense_ratio),
         tracking_error: Number(fund.tracking_error),
@@ -191,7 +200,7 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
 
     setIndexFunds(simulatedFunds);
     return simulatedFunds;
-  }, [simulatedYear, applyNAVChange]);
+  }, [simulatedYear, calculateYearlyNav]);
 
   // Fetch mutual fund holdings
   const fetchMfHoldings = useCallback(async () => {
@@ -286,7 +295,6 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
 
     const unitsToBuy = amount / fund.nav;
 
-    // Check for existing holding
     const { data: existingHolding, error: holdingError } = await supabase
       .from('mutual_fund_holdings')
       .select('id, units, average_nav')
@@ -296,7 +304,6 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
 
     if (holdingError) throw holdingError;
 
-    // Update cash balance
     const { error: balanceError } = await supabase
       .from('portfolios')
       .update({ cash_balance: currentCashBalance - amount })
@@ -358,7 +365,6 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
 
     const totalProceeds = fund.nav * units;
 
-    // Update cash balance
     const { error: balanceError } = await supabase
       .from('portfolios')
       .update({ cash_balance: currentCashBalance + totalProceeds })
@@ -482,7 +488,7 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
     return { success: true };
   };
 
-  // Calculate metrics
+  // Calculate metrics - invested value is always the actual amount put in
   const mfMetrics = {
     totalValue: mfHoldings.reduce((sum, h) => sum + h.currentValue, 0),
     investedValue: mfHoldings.reduce((sum, h) => sum + (h.average_nav * h.units), 0),
@@ -518,12 +524,15 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
     }
   }, [portfolioId, indexFunds, fetchIfHoldings]);
 
-  // Live NAV updates
+  // Small live NAV fluctuations (around yearly NAV, not compounding)
   useEffect(() => {
     const interval = setInterval(() => {
       setMutualFunds(prev => prev.map(fund => {
-        const fluctuation = 1 + (Math.random() - 0.5) * 0.01;
-        const newNav = fund.nav * fluctuation;
+        const category = fund.category as keyof typeof INTRADAY_FLUCTUATION;
+        const maxFluctuation = INTRADAY_FLUCTUATION[category] || INTRADAY_FLUCTUATION.large_cap;
+        
+        const fluctuation = 1 + (Math.random() - 0.5) * 2 * maxFluctuation;
+        const newNav = fund.yearlyNav * fluctuation;
         const change = newNav - fund.base_nav;
         const changePercent = (change / fund.base_nav) * 100;
         
@@ -536,8 +545,10 @@ export function useFundSimulation(portfolioId: string | null, simulatedYear: num
       }));
 
       setIndexFunds(prev => prev.map(fund => {
-        const fluctuation = 1 + (Math.random() - 0.5) * 0.008;
-        const newNav = fund.nav * fluctuation;
+        const maxFluctuation = INTRADAY_FLUCTUATION.index;
+        
+        const fluctuation = 1 + (Math.random() - 0.5) * 2 * maxFluctuation;
+        const newNav = fund.yearlyNav * fluctuation;
         const change = newNav - fund.base_nav;
         const changePercent = (change / fund.base_nav) * 100;
         
