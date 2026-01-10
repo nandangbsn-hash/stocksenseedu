@@ -60,49 +60,8 @@ export function useChallengeTracker() {
     }
   }, [user]);
 
-  // Update progress for a specific challenge
-  const updateChallengeProgress = useCallback(async (
-    challengeId: string,
-    progress: number,
-    badgeName?: string | null
-  ) => {
-    if (!user) return;
-
-    try {
-      const completed = progress >= 100;
-      
-      const { error } = await supabase
-        .from("challenge_progress")
-        .update({
-          progress: Math.min(progress, 100),
-          completed,
-          completed_at: completed ? new Date().toISOString() : null,
-        })
-        .eq("challenge_id", challengeId)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      // If completed, award badge if applicable
-      if (completed && badgeName) {
-        await awardBadge(badgeName);
-        toast({
-          title: "Challenge Completed! 🎉",
-          description: `You've earned XP and the "${badgeName}" badge!`,
-        });
-      } else if (completed) {
-        toast({
-          title: "Challenge Completed! 🎉",
-          description: "Congratulations! You've earned XP!",
-        });
-      }
-    } catch (error) {
-      console.error("Error updating challenge progress:", error);
-    }
-  }, [user]);
-
   // Award a badge to the user
-  const awardBadge = useCallback(async (badgeName: string) => {
+  async function awardBadge(badgeName: string) {
     if (!user) return;
 
     try {
@@ -132,6 +91,55 @@ export function useChallengeTracker() {
       });
     } catch (error) {
       console.error("Error awarding badge:", error);
+    }
+  }
+
+  // Update progress for a specific challenge
+  const updateChallengeProgress = useCallback(async (
+    challengeId: string,
+    progress: number,
+    badgeName?: string | null
+  ) => {
+    if (!user) return;
+
+    try {
+      // DB column is INTEGER, so normalize to an int (and keep it within 0..100)
+      const normalizedProgress = Number.isFinite(progress)
+        ? Math.max(0, Math.min(Math.round(progress), 100))
+        : 0;
+
+      const completed = normalizedProgress >= 100;
+
+      const { error } = await supabase
+        .from("challenge_progress")
+        .upsert(
+          {
+            challenge_id: challengeId,
+            user_id: user.id,
+            progress: normalizedProgress,
+            completed,
+            completed_at: completed ? new Date().toISOString() : null,
+          },
+          { onConflict: "challenge_id,user_id" }
+        );
+
+      if (error) throw error;
+
+      // If completed, award badge if applicable
+      if (completed && badgeName) {
+        await awardBadge(badgeName);
+        toast({
+          title: "Challenge Completed! 🎉",
+          description: `You've earned XP and the "${badgeName}" badge!`,
+        });
+      } else if (completed) {
+        toast({
+          title: "Challenge Completed! 🎉",
+          description: "Congratulations! You've earned XP!",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating challenge progress:", error);
     }
   }, [user]);
 

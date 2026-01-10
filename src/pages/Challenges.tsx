@@ -1,3 +1,5 @@
+import { useCallback, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ChallengeCard } from "@/components/ChallengeCard";
@@ -12,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function Challenges() {
   const { user } = useAuth();
-  const { challenges, badges, loading, startChallenge } = useChallenges();
+  const { challenges, badges, loading, startChallenge, refetch, refetchBadges } = useChallenges();
 
   const handleStartChallenge = (challenge: Challenge) => {
     if (challenge.completed) {
@@ -33,6 +35,61 @@ export default function Challenges() {
 
     startChallenge(challenge.id);
   };
+
+  const refresh = useCallback(() => {
+    refetch?.();
+    refetchBadges?.();
+  }, [refetch, refetchBadges]);
+
+  // Keep this page in-sync when progress/badges update (e.g. after simulator actions)
+  useEffect(() => {
+    refresh();
+
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+
+    const onVisibility = () => {
+      if (!document.hidden) refresh();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    if (!user) {
+      return () => {
+        window.removeEventListener("focus", onFocus);
+        document.removeEventListener("visibilitychange", onVisibility);
+      };
+    }
+
+    const channel = supabase
+      .channel("challenges-sync")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "challenge_progress",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => refresh()
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_badges",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => refresh()
+      )
+      .subscribe();
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      supabase.removeChannel(channel);
+    };
+  }, [user, refresh]);
 
   const earnedCount = badges.filter((b) => b.earned).length;
   const completedChallenges = challenges.filter((c) => c.completed).length;

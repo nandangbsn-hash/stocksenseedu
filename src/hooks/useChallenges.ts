@@ -252,5 +252,6 @@ export function useChallenges() {
     startChallenge,
     updateProgress,
     refetch: fetchChallenges,
+    refetchBadges: fetchBadges,
   };
 }

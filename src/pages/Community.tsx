@@ -44,69 +44,91 @@ const guidelines = [
   },
 ];
 
-function PostCard({ 
-  post, 
-  onLike, 
+function PostCard({
+  post,
+  onLike,
   onComment,
   isExpanded,
   onToggleExpand,
-}: { 
+}: {
   post: Post;
   onLike: () => void;
   onComment: () => void;
   isExpanded: boolean;
   onToggleExpand: () => void;
 }) {
-  const displayName = post.profile?.full_name || post.profile?.username || 'Anonymous';
-  const level = post.profile?.level || 'Beginner';
+  const displayName = post.profile?.full_name || post.profile?.username || "Anonymous";
+  const level = post.profile?.level || "Beginner";
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5 hover:border-primary/30 transition-all">
-      {/* Post Header */}
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground">{displayName}</span>
-              <span className="text-xs bg-muted px-2 py-0.5 rounded">{level}</span>
+    <div className="bg-card rounded-2xl border border-border shadow-soft overflow-hidden">
+      {/* Accent */}
+      <div className="h-1 w-full bg-gradient-to-r from-primary/60 via-accent/40 to-primary/20" />
+
+      <div className="p-5">
+        {/* Post Header */}
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center flex-shrink-0">
+              <User className="w-5 h-5 text-primary" />
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Clock className="w-3 h-3" />
-              {timeAgo}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium text-foreground truncate">{displayName}</span>
+                <span className="text-[11px] bg-muted px-2 py-0.5 rounded-full border border-border/60">
+                  {level}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Clock className="w-3 h-3" />
+                {timeAgo}
+              </div>
             </div>
           </div>
+
+          <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/15">
+            {post.tag}
+          </span>
         </div>
-        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-          {post.tag}
-        </span>
-      </div>
 
-      {/* Post Content */}
-      <h3 className="font-semibold text-lg text-foreground mb-2">{post.title}</h3>
-      <p className="text-muted-foreground text-sm mb-4 line-clamp-3">{post.content}</p>
+        {/* Post Content */}
+        <h3 className="font-display font-bold text-lg text-foreground mb-2">{post.title}</h3>
+        <p className={`text-muted-foreground text-sm mb-4 ${isExpanded ? "" : "line-clamp-3"}`}>
+          {post.content}
+        </p>
 
-      {/* Post Actions */}
-      <div className="flex items-center gap-4 pt-3 border-t border-border">
-        <button
-          onClick={onLike}
-          className={`flex items-center gap-1.5 text-sm transition-colors ${
-            post.isLiked ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'
-          }`}
-        >
-          <Heart className={`w-4 h-4 ${post.isLiked ? 'fill-current' : ''}`} />
-          {post.likes_count}
-        </button>
-        <button
-          onClick={onToggleExpand}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-        >
-          <MessageSquare className="w-4 h-4" />
-          {post.comments_count} comments
-        </button>
+        {/* Post Actions */}
+        <div className="flex items-center gap-2 pt-3 border-t border-border/80">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onLike}
+            className={post.isLiked ? "text-destructive" : "text-muted-foreground"}
+          >
+            <Heart className={`w-4 h-4 mr-2 ${post.isLiked ? "fill-current" : ""}`} />
+            {post.likes_count}
+          </Button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onToggleExpand}
+            className="text-muted-foreground"
+          >
+            <MessageSquare className="w-4 h-4 mr-2" />
+            {post.comments_count}
+            <span className="ml-1">{isExpanded ? "Hide" : "View"}</span>
+          </Button>
+
+          <div className="ml-auto" />
+
+          <Button type="button" variant="outline" size="sm" onClick={onToggleExpand}>
+            {isExpanded ? "Close" : "Open"}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -207,14 +229,14 @@ function CommentSection({
   }
 
   return (
-    <div className="bg-muted/30 rounded-xl p-4 mt-4 space-y-4">
+    <div className="bg-card/50 border border-border rounded-2xl p-4 mt-4 space-y-4">
       {/* Add Comment */}
       <div className="flex gap-2">
         <Input
           placeholder="Write a comment..."
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+          onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
         />
         <Button size="icon" onClick={handleAddComment}>
           <Send className="w-4 h-4" />
@@ -223,44 +245,46 @@ function CommentSection({
 
       {/* Comments List */}
       {comments.length === 0 ? (
-        <p className="text-center text-muted-foreground text-sm py-4">
-          Be the first to comment!
-        </p>
+        <p className="text-center text-muted-foreground text-sm py-4">Be the first to comment!</p>
       ) : (
         <div className="space-y-4">
-          {comments.map(comment => (
+          {comments.map((comment) => (
             <div key={comment.id} className="space-y-2">
               {/* Parent Comment */}
-              <div className="bg-card rounded-lg p-3">
+              <div className="bg-card rounded-xl p-4 border border-border/60">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                     <User className="w-3.5 h-3.5 text-primary" />
                   </div>
                   <span className="font-medium text-sm">
-                    {comment.profile?.full_name || comment.profile?.username || 'Anonymous'}
+                    {comment.profile?.full_name || comment.profile?.username || "Anonymous"}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                   </span>
                 </div>
                 <p className="text-sm text-foreground mb-2">{comment.content}</p>
-                <div className="flex items-center gap-3">
-                  <button
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleLikeComment(comment)}
-                    className={`flex items-center gap-1 text-xs transition-colors ${
-                      comment.isLiked ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'
-                    }`}
+                    className={comment.isLiked ? "text-destructive" : "text-muted-foreground"}
                   >
-                    <Heart className={`w-3.5 h-3.5 ${comment.isLiked ? 'fill-current' : ''}`} />
+                    <Heart className={`w-4 h-4 mr-2 ${comment.isLiked ? "fill-current" : ""}`} />
                     {comment.likes_count}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                    className="text-muted-foreground"
                   >
-                    <Reply className="w-3.5 h-3.5" />
+                    <Reply className="w-4 h-4 mr-2" />
                     Reply
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Reply Input */}
@@ -270,7 +294,7 @@ function CommentSection({
                       placeholder="Write a reply..."
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddReply(comment.id)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddReply(comment.id)}
                       className="text-sm"
                     />
                     <Button size="sm" onClick={() => handleAddReply(comment.id)}>
@@ -283,29 +307,30 @@ function CommentSection({
               {/* Replies */}
               {comment.replies && comment.replies.length > 0 && (
                 <div className="pl-6 space-y-2">
-                  {comment.replies.map(reply => (
-                    <div key={reply.id} className="bg-muted/50 rounded-lg p-3">
+                  {comment.replies.map((reply) => (
+                    <div key={reply.id} className="bg-muted/30 rounded-xl p-4 border border-border/40">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 rounded-full bg-secondary/10 flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-lg bg-secondary/10 flex items-center justify-center">
                           <User className="w-3 h-3 text-secondary" />
                         </div>
                         <span className="font-medium text-xs">
-                          {reply.profile?.full_name || reply.profile?.username || 'Anonymous'}
+                          {reply.profile?.full_name || reply.profile?.username || "Anonymous"}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
                         </span>
                       </div>
                       <p className="text-sm text-foreground mb-2">{reply.content}</p>
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleLikeComment(reply)}
-                        className={`flex items-center gap-1 text-xs transition-colors ${
-                          reply.isLiked ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'
-                        }`}
+                        className={reply.isLiked ? "text-destructive" : "text-muted-foreground"}
                       >
-                        <Heart className={`w-3 h-3 ${reply.isLiked ? 'fill-current' : ''}`} />
+                        <Heart className={`w-4 h-4 mr-2 ${reply.isLiked ? "fill-current" : ""}`} />
                         {reply.likes_count}
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
