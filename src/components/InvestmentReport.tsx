@@ -1,7 +1,7 @@
 import { TrendingUp, TrendingDown, Award, Target, BarChart3, PieChart, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Holding, PortfolioHistoryPoint } from "@/hooks/useStockSimulation";
+import { Holding, PortfolioHistoryPoint } from "@/contexts/SimulationContext";
 
 interface InvestmentReportProps {
   open: boolean;

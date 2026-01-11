@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SimulationProvider } from "@/contexts/SimulationContext";
 import Index from "./pages/Index";
 import Simulator from "./pages/Simulator";
 import Learn from "./pages/Learn";
@@ -24,19 +25,21 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/simulator" element={<Simulator />} />
-            <Route path="/learn" element={<Learn />} />
-            <Route path="/learn/:slug" element={<LessonArticle />} />
-            <Route path="/challenges" element={<Challenges />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/ai-coach" element={<AICoach />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <SimulationProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/simulator" element={<Simulator />} />
+              <Route path="/learn" element={<Learn />} />
+              <Route path="/learn/:slug" element={<LessonArticle />} />
+              <Route path="/challenges" element={<Challenges />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/ai-coach" element={<AICoach />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </SimulationProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

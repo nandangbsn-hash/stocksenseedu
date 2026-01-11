@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { FundCard } from "./FundCard";
-import { MutualFund, IndexFund, MutualFundHolding, IndexFundHolding } from "@/hooks/useFundSimulation";
+import { MutualFund, IndexFund, MutualFundHolding, IndexFundHolding } from "@/contexts/SimulationContext";
 
 interface FundsSectionProps {
   mutualFunds: MutualFund[];

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Zap } from "lucide-react";
-import { Stock } from "@/hooks/useStockSimulation";
+import { Stock } from "@/contexts/SimulationContext";
 import { cn } from "@/lib/utils";
 
 interface LiveStockTickerProps {
