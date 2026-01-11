@@ -1,7 +1,7 @@
 import { TrendingUp, TrendingDown, Building2, Target, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MutualFund, IndexFund } from "@/hooks/useFundSimulation";
+import { MutualFund, IndexFund } from "@/contexts/SimulationContext";
 
 interface FundCardProps {
   fund: MutualFund | IndexFund;

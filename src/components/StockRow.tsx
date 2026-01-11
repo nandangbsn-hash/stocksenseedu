@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { TrendingUp, TrendingDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Stock, Holding } from "@/hooks/useStockSimulation";
+import { Stock, Holding } from "@/contexts/SimulationContext";
 import { cn } from "@/lib/utils";
 
 interface StockRowProps {

@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useStockSimulation, Stock, Holding } from "@/hooks/useStockSimulation";
-import { useFundSimulation } from "@/hooks/useFundSimulation";
+import { useSimulation, Stock, Holding } from "@/contexts/SimulationContext";
 import { useChallengeTracker } from "@/hooks/useChallengeTracker";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
@@ -77,14 +76,9 @@ export default function Simulator() {
   const { 
     stocks, portfolio, holdings, metrics, simulatedYear, portfolioHistory, 
     loading, simulationEnded, endData, maxYears, buyStock, sellStock, resetSimulation,
-    refreshData: refreshStockData
-  } = useStockSimulation();
-  
-  const {
     mutualFunds, indexFunds, mfHoldings, ifHoldings, mfMetrics, ifMetrics,
     buyMutualFund, sellMutualFund, buyIndexFund, sellIndexFund,
-    refreshData: refreshFundData
-  } = useFundSimulation(portfolio?.id || null, simulatedYear);
+  } = useSimulation();
 
   const { 
     trackStockPurchase, 
@@ -108,11 +102,8 @@ export default function Simulator() {
   
   // Combined portfolio metrics including funds
   const totalFundsValue = mfMetrics.totalValue + ifMetrics.totalValue;
-  const totalFundsInvested = mfMetrics.investedValue + ifMetrics.investedValue;
   const combinedMetrics = {
     ...metrics,
-    totalValue: metrics.totalValue + totalFundsValue,
-    investedValue: metrics.investedValue + totalFundsInvested,
     fundsValue: totalFundsValue,
   };
 
@@ -645,10 +636,7 @@ export default function Simulator() {
                     onSellMutualFund={sellMutualFund}
                     onBuyIndexFund={buyIndexFund}
                     onSellIndexFund={sellIndexFund}
-                    onRefreshPortfolio={() => {
-                      refreshStockData();
-                      refreshFundData();
-                    }}
+                    onRefreshPortfolio={() => {}}
                     onTrackMutualFundPurchase={trackMutualFundPurchase}
                   />
                 </TabsContent>
@@ -665,10 +653,7 @@ export default function Simulator() {
                     onSellMutualFund={sellMutualFund}
                     onBuyIndexFund={buyIndexFund}
                     onSellIndexFund={sellIndexFund}
-                    onRefreshPortfolio={() => {
-                      refreshStockData();
-                      refreshFundData();
-                    }}
+                    onRefreshPortfolio={() => {}}
                     onTrackIndexFundPurchase={trackIndexFundPurchase}
                   />
                 </TabsContent>
