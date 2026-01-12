@@ -9,7 +9,6 @@ interface FundCardProps {
   holding?: {
     units: number;
     currentValue: number;
-    investedValue: number;
     profitLoss: number;
     profitLossPercent: number;
   };
@@ -122,10 +121,6 @@ export function FundCard({ fund, type, holding, onBuy, onSell }: FundCardProps) 
               {holding.profitLoss >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
               {holding.profitLoss >= 0 ? '+' : ''}{holding.profitLossPercent.toFixed(1)}%
             </div>
-          </div>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground">Invested</span>
-            <span className="text-sm font-medium">₹{holding.investedValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">{holding.units.toFixed(3)} units</span>

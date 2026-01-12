@@ -243,7 +243,6 @@ export function FundsSection({
                             holding={h ? {
                               units: h.units,
                               currentValue: h.currentValue,
-                              investedValue: h.average_nav * h.units,
                               profitLoss: h.profitLoss,
                               profitLossPercent: h.profitLossPercent,
                             } : undefined}
@@ -279,7 +278,6 @@ export function FundsSection({
                       holding={h ? {
                         units: h.units,
                         currentValue: h.currentValue,
-                        investedValue: h.average_nav * h.units,
                         profitLoss: h.profitLoss,
                         profitLossPercent: h.profitLossPercent,
                       } : undefined}
