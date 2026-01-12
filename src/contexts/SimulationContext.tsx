@@ -399,14 +399,15 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     }
   }, [user, calculateSimulatedYear]);
 
-  // Fetch stock holdings
-  const fetchHoldings = useCallback(async (currentStocks?: Stock[]) => {
-    if (!user || !portfolio) return;
+  // Fetch stock holdings - accepts portfolioId directly to avoid race conditions
+  const fetchHoldings = useCallback(async (currentStocks?: Stock[], portfolioId?: string) => {
+    const targetPortfolioId = portfolioId || portfolio?.id;
+    if (!user || !targetPortfolioId) return;
 
     const { data, error } = await supabase
       .from('holdings')
       .select('*')
-      .eq('portfolio_id', portfolio.id);
+      .eq('portfolio_id', targetPortfolioId);
 
     if (error) {
       console.error('Error fetching holdings:', error);
@@ -437,14 +438,15 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     return holdingsWithCalcs;
   }, [user, portfolio, stocks]);
 
-  // Fetch MF holdings
-  const fetchMfHoldings = useCallback(async (funds?: MutualFund[]) => {
-    if (!portfolio) return;
+  // Fetch MF holdings - accepts portfolioId directly to avoid race conditions
+  const fetchMfHoldings = useCallback(async (funds?: MutualFund[], portfolioId?: string) => {
+    const targetPortfolioId = portfolioId || portfolio?.id;
+    if (!targetPortfolioId) return;
 
     const { data, error } = await supabase
       .from('mutual_fund_holdings')
       .select('*')
-      .eq('portfolio_id', portfolio.id);
+      .eq('portfolio_id', targetPortfolioId);
 
     if (error) return;
 
@@ -475,14 +477,15 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     setMfHoldings(holdingsWithCalcs || []);
   }, [portfolio, mutualFunds]);
 
-  // Fetch IF holdings
-  const fetchIfHoldings = useCallback(async (funds?: IndexFund[]) => {
-    if (!portfolio) return;
+  // Fetch IF holdings - accepts portfolioId directly to avoid race conditions
+  const fetchIfHoldings = useCallback(async (funds?: IndexFund[], portfolioId?: string) => {
+    const targetPortfolioId = portfolioId || portfolio?.id;
+    if (!targetPortfolioId) return;
 
     const { data, error } = await supabase
       .from('index_fund_holdings')
       .select('*')
-      .eq('portfolio_id', portfolio.id);
+      .eq('portfolio_id', targetPortfolioId);
 
     if (error) return;
 
@@ -860,9 +863,27 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     fetchIfHoldings();
   }, [fetchStocks, fetchMutualFunds, fetchIndexFunds, fetchHoldings, fetchMfHoldings, fetchIfHoldings]);
 
-  // Initialize on user login
+  // Clear all state when user logs out
+  const clearAllState = useCallback(() => {
+    setPortfolio(null);
+    setHoldings([]);
+    setMfHoldings([]);
+    setIfHoldings([]);
+    setSimulatedYear(1);
+    setPortfolioHistory([]);
+    setSimulationEnded(false);
+    setEndData(null);
+    yearlyPricesRef.current.clear();
+    navCacheRef.current.clear();
+    lastYearRef.current = 1;
+    isInitializedRef.current = false;
+  }, []);
+
+  // Initialize on user login / clear on logout
   useEffect(() => {
     if (!user) {
+      // User logged out - clear all state
+      clearAllState();
       setLoading(false);
       return;
     }
@@ -870,22 +891,29 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     const init = async () => {
       setLoading(true);
       
+      // Clear any stale state first
+      clearAllState();
+      
+      // Fetch all base data in parallel
       const [stockData, mfData, ifData] = await Promise.all([
         fetchStocks(),
         fetchMutualFunds(),
         fetchIndexFunds(),
       ]);
       
+      // Fetch portfolio and get the data directly
       const portfolioData = await fetchPortfolio();
       
-      if (portfolioData && stockData) {
-        await fetchHoldings(stockData);
-      }
-      if (portfolioData && mfData) {
-        await fetchMfHoldings(mfData);
-      }
-      if (portfolioData && ifData) {
-        await fetchIfHoldings(ifData);
+      // Use portfolioData.id directly instead of relying on state
+      if (portfolioData) {
+        const portfolioId = portfolioData.id;
+        
+        // Fetch all holdings in parallel with the portfolio ID
+        await Promise.all([
+          stockData ? fetchHoldings(stockData, portfolioId) : Promise.resolve(),
+          mfData ? fetchMfHoldings(mfData, portfolioId) : Promise.resolve(),
+          ifData ? fetchIfHoldings(ifData, portfolioId) : Promise.resolve(),
+        ]);
       }
       
       isInitializedRef.current = true;
@@ -893,7 +921,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     };
 
     init();
-  }, [user]);
+  }, [user, clearAllState, fetchStocks, fetchMutualFunds, fetchIndexFunds, fetchPortfolio, fetchHoldings, fetchMfHoldings, fetchIfHoldings]);
 
   // GLOBAL live price updates - runs even when not on simulator page
   useEffect(() => {
