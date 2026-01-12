@@ -102,9 +102,13 @@ export default function Simulator() {
   
   // Combined portfolio metrics including funds
   const totalFundsValue = mfMetrics.totalValue + ifMetrics.totalValue;
+  const totalFundsInvested = mfMetrics.investedValue + ifMetrics.investedValue;
+  const totalUnrealizedPL = metrics.unrealizedPL;
+  const totalUnrealizedPLPercent = metrics.unrealizedPLPercent;
   const combinedMetrics = {
     ...metrics,
     fundsValue: totalFundsValue,
+    fundsInvested: totalFundsInvested,
   };
 
   // Track years held and portfolio return for challenges
@@ -343,6 +347,11 @@ export default function Simulator() {
                       <p className="font-bold text-lg">
                         ₹{combinedMetrics.investedValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                       </p>
+                      {totalFundsInvested > 0 && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          Funds: ₹{totalFundsInvested.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                        </p>
+                      )}
                     </div>
                     <div className="bg-muted/50 rounded-xl p-3 border border-border/50 hover:border-primary/30 transition-colors">
                       <p className="text-xs text-muted-foreground">Cash</p>
@@ -415,16 +424,18 @@ export default function Simulator() {
                       <BarChart3 className="w-3.5 h-3.5 text-primary" />
                     </div>
                     Your Holdings 
-                    <span className="text-xs text-muted-foreground font-normal">({holdings.length})</span>
+                    <span className="text-xs text-muted-foreground font-normal">
+                      ({holdings.length + mfHoldings.length + ifHoldings.length})
+                    </span>
                   </h3>
                   <div className={`transition-transform duration-200 ${showHoldings ? 'rotate-180' : ''}`}>
                     <ChevronDown className="w-4 h-4" />
                   </div>
                 </button>
 
-                <div className={`overflow-hidden transition-all duration-300 ${showHoldings ? 'max-h-[800px] overflow-y-auto' : 'max-h-0'}`}>
-                  <div className="px-4 pb-4 space-y-2">
-                    {holdings.length === 0 ? (
+                <div className={`overflow-hidden transition-all duration-300 ${showHoldings ? 'max-h-[1200px] overflow-y-auto' : 'max-h-0'}`}>
+                  <div className="px-4 pb-4 space-y-3">
+                    {holdings.length === 0 && mfHoldings.length === 0 && ifHoldings.length === 0 ? (
                       <div className="text-center py-6">
                         <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
                           <Wallet className="w-5 h-5 text-muted-foreground" />
@@ -433,43 +444,175 @@ export default function Simulator() {
                         <p className="text-xs text-muted-foreground mt-1">Start investing to build your portfolio!</p>
                       </div>
                     ) : (
-                      holdings.map((holding, index) => (
-                        <div 
-                          key={holding.id} 
-                          className="bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl p-3.5 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-sm animate-fade-in"
-                          style={{ animationDelay: `${index * 50}ms` }}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                                holding.profitLoss >= 0 
-                                  ? 'bg-success/20 text-success' 
-                                  : 'bg-destructive/20 text-destructive'
-                              }`}>
-                                {holding.stock.symbol.slice(0, 2)}
-                              </div>
-                              <div>
-                                <span className="font-semibold text-sm">{holding.stock.symbol}</span>
-                                <p className="text-[10px] text-muted-foreground">{holding.quantity} shares</p>
-                              </div>
-                            </div>
-                            <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${
-                              holding.profitLoss >= 0 
-                                ? 'bg-success/10 text-success' 
-                                : 'bg-destructive/10 text-destructive'
-                            }`}>
-                              {holding.profitLoss >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                              {holding.profitLoss >= 0 ? '+' : ''}{holding.profitLossPercent.toFixed(1)}%
+                      <>
+                        {/* Stock Holdings */}
+                        {holdings.length > 0 && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-2 font-medium flex items-center gap-1">
+                              <BarChart3 className="w-3 h-3" /> Stocks ({holdings.length})
+                            </p>
+                            <div className="space-y-2">
+                              {holdings.map((holding, index) => (
+                                <div 
+                                  key={holding.id} 
+                                  className="bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl p-3.5 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-sm animate-fade-in"
+                                  style={{ animationDelay: `${index * 50}ms` }}
+                                >
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                                        holding.profitLoss >= 0 
+                                          ? 'bg-success/20 text-success' 
+                                          : 'bg-destructive/20 text-destructive'
+                                      }`}>
+                                        {holding.stock.symbol.slice(0, 2)}
+                                      </div>
+                                      <div>
+                                        <span className="font-semibold text-sm">{holding.stock.symbol}</span>
+                                        <p className="text-[10px] text-muted-foreground">{holding.quantity} shares</p>
+                                      </div>
+                                    </div>
+                                    <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${
+                                      holding.profitLoss >= 0 
+                                        ? 'bg-success/10 text-success' 
+                                        : 'bg-destructive/10 text-destructive'
+                                    }`}>
+                                      {holding.profitLoss >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                      {holding.profitLoss >= 0 ? '+' : ''}{holding.profitLossPercent.toFixed(1)}%
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center justify-between text-xs mb-1">
+                                    <span className="text-muted-foreground">Invested</span>
+                                    <span className="text-muted-foreground">
+                                      ₹{(holding.average_buy_price * holding.quantity).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">Current Value</span>
+                                    <span className="font-semibold">
+                                      ₹{holding.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Current Value</span>
-                            <span className="font-semibold">
-                              ₹{holding.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                            </span>
+                        )}
+
+                        {/* Mutual Fund Holdings */}
+                        {mfHoldings.length > 0 && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-2 font-medium flex items-center gap-1">
+                              <Building2 className="w-3 h-3" /> Mutual Funds ({mfHoldings.length})
+                            </p>
+                            <div className="space-y-2">
+                              {mfHoldings.map((holding, index) => {
+                                const investedValue = holding.average_nav * holding.units;
+                                return (
+                                  <div 
+                                    key={holding.id} 
+                                    className="bg-gradient-to-r from-blue-500/5 to-blue-500/10 rounded-xl p-3.5 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 hover:shadow-sm animate-fade-in"
+                                    style={{ animationDelay: `${index * 50}ms` }}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                                          holding.profitLoss >= 0 
+                                            ? 'bg-success/20 text-success' 
+                                            : 'bg-destructive/20 text-destructive'
+                                        }`}>
+                                          {holding.fund.symbol.slice(0, 2)}
+                                        </div>
+                                        <div>
+                                          <span className="font-semibold text-sm">{holding.fund.symbol}</span>
+                                          <p className="text-[10px] text-muted-foreground">{holding.units.toFixed(3)} units</p>
+                                        </div>
+                                      </div>
+                                      <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${
+                                        holding.profitLoss >= 0 
+                                          ? 'bg-success/10 text-success' 
+                                          : 'bg-destructive/10 text-destructive'
+                                      }`}>
+                                        {holding.profitLoss >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                        {holding.profitLoss >= 0 ? '+' : ''}{holding.profitLossPercent.toFixed(1)}%
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs mb-1">
+                                      <span className="text-muted-foreground">Invested</span>
+                                      <span className="text-muted-foreground">
+                                        ₹{investedValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="text-muted-foreground">Current Value</span>
+                                      <span className="font-semibold">
+                                        ₹{holding.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        )}
+
+                        {/* Index Fund Holdings */}
+                        {ifHoldings.length > 0 && (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-2 font-medium flex items-center gap-1">
+                              <Landmark className="w-3 h-3" /> Index Funds ({ifHoldings.length})
+                            </p>
+                            <div className="space-y-2">
+                              {ifHoldings.map((holding, index) => {
+                                const investedValue = holding.average_nav * holding.units;
+                                return (
+                                  <div 
+                                    key={holding.id} 
+                                    className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl p-3.5 border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-sm animate-fade-in"
+                                    style={{ animationDelay: `${index * 50}ms` }}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                                          holding.profitLoss >= 0 
+                                            ? 'bg-success/20 text-success' 
+                                            : 'bg-destructive/20 text-destructive'
+                                        }`}>
+                                          {holding.fund.symbol.slice(0, 2)}
+                                        </div>
+                                        <div>
+                                          <span className="font-semibold text-sm">{holding.fund.symbol}</span>
+                                          <p className="text-[10px] text-muted-foreground">{holding.units.toFixed(3)} units</p>
+                                        </div>
+                                      </div>
+                                      <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold ${
+                                        holding.profitLoss >= 0 
+                                          ? 'bg-success/10 text-success' 
+                                          : 'bg-destructive/10 text-destructive'
+                                      }`}>
+                                        {holding.profitLoss >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                        {holding.profitLoss >= 0 ? '+' : ''}{holding.profitLossPercent.toFixed(1)}%
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs mb-1">
+                                      <span className="text-muted-foreground">Invested</span>
+                                      <span className="text-muted-foreground">
+                                        ₹{investedValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="text-muted-foreground">Current Value</span>
+                                      <span className="font-semibold">
+                                        ₹{holding.currentValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
